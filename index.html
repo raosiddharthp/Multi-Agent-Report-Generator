@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Multi-Agent Research & Report Generator</title>
+  <meta name="description" content="Graph-based multi-agent system for autonomous research and report generation using open-source LLMs">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
+    body {
+      font-family: 'Space Mono', monospace;
+      background: white;
+      color: black;
+      max-width: 900px;
+      margin: 60px auto;
+      padding: 0 20px;
+      line-height: 1.7;
+      font-size: 17px;
+    }
+
+    h1 {
+      color: #0066FF;
+      font-size: 2.4em;
+      border-bottom: 4px solid #0066FF;
+      padding-bottom: 15px;
+      margin-bottom: 40px;
+    }
+
+    h2 {
+      color: #0066FF;
+      font-size: 1.8em;
+      margin-top: 3em;
+      border-bottom: 2px solid #0066FF;
+      padding-bottom: 8px;
+    }
+
+    h3 {
+      color: #0066FF;
+      font-size: 1.4em;
+      margin-top: 2.5em;
+    }
+
+    p, ul, ol, li {
+      margin-bottom: 1.2em;
+    }
+
+    ul, ol {
+      padding-left: 2em;
+    }
+
+    a {
+      color: #0066FF;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Multi-Agent Research & Report Generator</h1>
+
+<h2>1. Description</h2>
+<p>A multi-agent LLM-powered system designed to conduct in-depth, structured research on user-defined topics and automatically generate comprehensive, well-organized reports. The system orchestrates specialized agents that plan research scope, gather information from public web sources, synthesize findings, critique intermediate outputs, and format final deliverables in professional Markdown or PDF format. The core innovation lies in its graph-based, stateful workflow that enables iterative refinement, self-correction, and transparent reasoning traces – addressing common shortcomings of single-pass LLM research tools such as shallow coverage, hallucinations, and lack of source attribution.</p>
+
+<h2>2. Executive Summary</h2>
+<p>The Multi-Agent Research & Report Generator represents a shift from monolithic LLM query-response patterns toward orchestrated, agentic workflows capable of performing complex, multi-step cognitive tasks. By decomposing research into distinct phases handled by purpose-built agents, the system achieves higher factual accuracy, deeper analytical coverage, and structured output suitable for strategic decision-making. Built entirely on open-source components and runnable locally or via lightweight cloud-free deployment, the project serves as both a demonstrable prototype of contemporary agentic AI architecture and a foundation for extensible enterprise knowledge synthesis tools.</p>
+
+<h2>3. Business Strategy</h2>
+
+<h3>3.1 Strategic Value Proposition</h3>
+<p>The system delivers measurable time compression for knowledge-intensive tasks that currently require hours or days of manual research. It provides consistent report structure, traceable sources, and built-in quality assurance loops while maintaining full data privacy through local execution options. The primary value lies in enabling small teams and individual professionals to produce research outputs comparable to those of dedicated analysts, thereby leveling access to high-quality market, competitive, technical, and strategic intelligence.</p>
+
+<h3>3.2 Regulatory Strategy</h3>
+<p>All data processing occurs client-side or on user-controlled infrastructure. No user queries or generated content are transmitted to third-party logging services by default. Web search interactions are limited to public APIs with no authentication. Future extensions will incorporate configurable content filters and output redaction capabilities to support domains with heightened compliance requirements. The architecture explicitly separates research retrieval from proprietary knowledge ingestion paths to facilitate regulated deployments.</p>
+
+<h2>4. Users</h2>
+
+<h3>4.1 Target User Personas</h3>
+<ul>
+  <li><strong>Indie Consultant / Solo Founder</strong>: Needs rapid market landscaping, competitor analysis, and investor deck research support.</li>
+  <li><strong>Product Manager</strong>: Requires technical deep dives, feature comparisons, and emerging trend reports.</li>
+  <li><strong>Developer Advocate / Technical Writer</strong>: Seeks structured overviews of new frameworks, protocols, or ecosystem developments.</li>
+  <li><strong>Strategy Analyst (SMB)</strong>: Performs regular industry monitoring and opportunity identification without dedicated research staff.</li>
+  <li><strong>Academic Researcher (early-stage)</strong>: Uses the tool for literature scanning and hypothesis landscaping prior to formal academic database access.</li>
+</ul>
+
+<h3>4.2 Lightweight Requirements and User Stories</h3>
+<p>As a user, I want to:</p>
+<ul>
+  <li>Enter a research topic and receive a comprehensive report within minutes.</li>
+  <li>Specify desired depth (quick overview vs. exhaustive analysis) and output format.</li>
+  <li>View source links for every claim in the final report.</li>
+  <li>See the step-by-step reasoning trace of how conclusions were reached.</li>
+  <li>Save or export reports in Markdown/PDF with consistent professional formatting.</li>
+  <li>Run the entire system locally to ensure data privacy.</li>
+</ul>
+
+<h3>4.3 User Journey Map</h3>
+<ol>
+  <li>User accesses web interface → enters research query and optional parameters (depth, focus areas).</li>
+  <li>System displays real-time progress log showing active agent and current task.</li>
+  <li>User observes intermediate artifacts (outline, raw search results, draft sections) if desired.</li>
+  <li>System completes iteration cycles → final report rendered with table of contents, executive summary, detailed sections, and references.</li>
+  <li>User downloads report or copies content → optionally provides feedback for future improvements.</li>
+</ol>
+
+<h2>5. Design and Architecture</h2>
+
+<h3>5.1 Phase A: Vision</h3>
+<p>Establish an agentic research workflow that mirrors human expert research processes: scope definition, information gathering, synthesis, critical review, and polished delivery. The system must remain transparent, controllable, and extensible.</p>
+
+<h3>5.2 Phase B: Business</h3>
+<p>Core capabilities: topic scoping, web research, multi-perspective synthesis, quality assurance, structured reporting. Success metrics: report completeness, source attribution accuracy, user time saved, subjective quality rating.</p>
+
+<h3>5.3 Phase C: Information</h3>
+<p>Information flows through a persistent state object containing: original query, generated outline, search results, draft sections, critique feedback, final report, and metadata (sources, timestamps). All state transitions are logged for traceability.</p>
+
+<h3>5.4 Phase D: Technology</h3>
+<ul>
+  <li>Orchestration: LangGraph (stateful graph-based workflow engine)</li>
+  <li>LLM backend: Configurable open-source models via Ollama (default: Llama 3.1 8B/70B or Mistral Large)</li>
+  <li>Search tool: DuckDuckGo search wrapper (privacy-preserving, no API key required)</li>
+  <li>Vector store (future): Chroma or FAISS for optional long-term memory</li>
+  <li>Frontend: Streamlit or Gradio for interactive experience</li>
+  <li>Persistence: Local JSON checkpoints for resumable workflows</li>
+</ul>
+
+<h2>6. Rollout and Roadmap - Implementation Phases and PI Mapping</h2>
+
+<h3>6.1 Current State</h3>
+<p>MVP with five core agents, basic web search integration, Markdown report output, and local execution capability.</p>
+
+<h3>6.2 Future State</h3>
+<ul>
+  <li>Multi-modal inputs (PDF upload, image analysis)</li>
+  <li>Custom knowledge base integration</li>
+  <li>Team collaboration features</li>
+  <li>API exposure for workflow embedding</li>
+  <li>Advanced critique loops with quantitative scoring</li>
+</ul>
+
+<h3>6.3 Agile Delivery - ART</h3>
+<p>Program Increment structure:</p>
+<ul>
+  <li>PI-1: Core graph workflow and single-agent baseline</li>
+  <li>PI-2: Multi-agent orchestration and critique loop</li>
+  <li>PI-3: Structured report formatting and source citation</li>
+  <li>PI-4: User interface and deployment options</li>
+  <li>PI-5: Observability, logging, and feedback integration</li>
+</ul>
+
+<h3>6.4 Change Management</h3>
+<p>Open-source development with clear contribution guidelines. Version pinning for reproducible behavior. Extensive documentation of agent prompts and decision logic to enable community extensions.</p>
+
+<h3>6.5 Target Value Stream</h3>
+<p>Query intake → Research planning → Information retrieval → Synthesis → Critical review → Report formatting → Delivery</p>
+
+<h2>7. Multi-Agent Model</h2>
+
+<h3>7.1 Agent Personas</h3>
+<ul>
+  <li><strong>Planner Agent</strong>: Defines research scope, generates detailed outline with weighted sections.</li>
+  <li><strong>Researcher Agent</strong>: Executes targeted searches, extracts relevant snippets, maintains source tracking.</li>
+  <li><strong>Synthesizer Agent</strong>: Drafts coherent sections based on outline and gathered data.</li>
+  <li><strong>Critic Agent</strong>: Evaluates draft quality, factual consistency, coverage gaps, and tone appropriateness.</li>
+  <li><strong>Formatter Agent</strong>: Applies consistent structure, generates executive summary, table of contents, and reference list.</li>
+</ul>
+
+<h3>7.2 Reasoning Trace</h3>
+<p>Full trace preserved in state object and displayed optionally in UI. Each agent appends its rationale, confidence level, and references used. Enables post-hoc analysis and debugging.</p>
+
+<h3>7.3 Decision Matrix and Conflict Resolution</h3>
+<p>Critic Agent scores draft sections across dimensions (accuracy, completeness, clarity, objectivity). Scores below threshold trigger targeted re-research or re-synthesis. Conflicts between agents resolved via predefined priority (Critic overrides Synthesizer, Planner overrides scope drift).</p>
+
+<h2>8. Intelligence Platform</h2>
+
+<h3>8.1 Unified Intelligence Stack Architecture</h3>
+<p>LangGraph as central orchestrator managing state transitions. Agents implemented as nodes with typed inputs/outputs. Tools (search, future database queries) exposed via LangChain tool-calling interface. All components loosely coupled for independent testing and replacement.</p>
+
+<h3>8.2 The RAG Component (Future Extension)</h3>
+<p>Hybrid retrieval strategy: web search for current events + optional user-provided document corpus ingested into local vector store. Query rewriting and hierarchical retrieval planned for improved precision.</p>
+
+<h3>8.3 Observability Layer</h3>
+<p>Structured logging of agent invocations, token usage, latency, and decision scores. Exportable traces for analysis and iterative prompt improvement.</p>
+
+<h2>9. The Model Lifecycle</h2>
+<ul>
+  <li><strong>Selection</strong>: Default to Llama 3.1 8B for speed/accuracy balance; support larger models for enhanced reasoning.</li>
+  <li><strong>Prompt Management</strong>: Version-controlled prompt templates stored in repository.</li>
+  <li><strong>Evaluation</strong>: Periodic offline evaluation against curated research questions using automated metrics (source coverage, hallucination rate) and human review.</li>
+  <li><strong>Continuous Improvement</strong>: Feedback loop from user ratings to refine Critic Agent scoring rubric and Planner outlining logic.</li>
+</ul>
+
+<h2>10. Infrastructure</h2>
+
+<h3>10.1 Blueprint</h3>
+<ul>
+  <li>Local deployment: Docker Compose with Ollama container</li>
+  <li>Lightweight hosted: Hugging Face Spaces or Streamlit Community Cloud (single-container deployment)</li>
+  <li>Self-hosted scalable: Kubernetes with Ollama inference servers (future)</li>
+</ul>
+
+<h3>10.2 Security</h3>
+<p>No external telemetry by default. All search queries anonymized through public APIs. Local model inference ensures no data exfiltration. Future: optional content filtering and PII redaction.</p>
+
+<h3>10.3 Governance and Compliance</h3>
+<p>Transparent prompt and tool usage logging. Configurable guardrails for sensitive topics. Clear disclaimers regarding factual accuracy and source reliability.</p>
+
+<h3>10.4 SRE</h3>
+<p>Container health checks, graceful degradation on search failures, retry logic with exponential backoff, rate limiting on tool calls to prevent abuse.</p>
+
+<h2>11. Impact & Outcomes</h2>
+<p>Expected outcomes include:</p>
+<ul>
+  <li>70-90% reduction in time required for initial research phases</li>
+  <li>Consistent report quality independent of user expertise</li>
+  <li>Improved decision-making velocity through accessible intelligence</li>
+  <li>Foundation for domain-specific adaptations (technical, market, legal research)</li>
+  <li>Contribution to open-source agentic AI patterns and best practices</li>
+</ul>
+
+<p>This design establishes a robust, extensible framework for autonomous research capabilities while maintaining transparency, privacy, and alignment with responsible AI development principles.</p>
+
+</body>
+</html>
