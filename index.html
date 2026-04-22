@@ -1,228 +1,1739 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Multi-Agent Research & Report Generator</title>
-  <meta name="description" content="Graph-based multi-agent system for autonomous research and report generation using open-source LLMs">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
-
-    body {
-      font-family: 'Space Mono', monospace;
-      background: white;
-      color: black;
-      max-width: 900px;
-      margin: 60px auto;
-      padding: 0 20px;
-      line-height: 1.7;
-      font-size: 17px;
-    }
-
-    h1 {
-      color: #0066FF;
-      font-size: 2.4em;
-      border-bottom: 4px solid #0066FF;
-      padding-bottom: 15px;
-      margin-bottom: 40px;
-    }
-
-    h2 {
-      color: #0066FF;
-      font-size: 1.8em;
-      margin-top: 3em;
-      border-bottom: 2px solid #0066FF;
-      padding-bottom: 8px;
-    }
-
-    h3 {
-      color: #0066FF;
-      font-size: 1.4em;
-      margin-top: 2.5em;
-    }
-
-    p, ul, ol, li {
-      margin-bottom: 1.2em;
-    }
-
-    ul, ol {
-      padding-left: 2em;
-    }
-
-    a {
-      color: #0066FF;
-      text-decoration: none;
-    }
-
-    a:hover {
-      text-decoration: underline;
-    }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MARG — Multi-Agent Research &amp; Report Generator · Architecture Design Document</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:       #f7f6f3;
+  --paper:    #faf9f7;
+  --ink:      #1a1916;
+  --ink2:     #4a4845;
+  --ink3:     #8a8784;
+  --rule:     #dddbd6;
+  --rule2:    #e8e6e1;
+  --accent:   #3d6b8e;
+  --accent-bg:#eef3f7;
+  --code-bg:  #f0eeea;
+  --pass:     #3a7d5a;
+  --pass-bg:  #eef5f1;
+  --warn:     #7a6030;
+  --warn-bg:  #f5f0e8;
+  --fail:     #b04040;
+  --fail-bg:  #fdf0f0;
+  --mono:     'JetBrains Mono', 'Courier New', monospace;
+  --serif:    'Lora', Georgia, serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+}
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+  padding: 0 0 0 17rem;
+  display: flex; align-items: center; gap: 0;
+  height: 44px;
+}
+.nav-title {
+  font-family: var(--mono); font-size: 0.68rem; font-weight: 400;
+  color: var(--ink3); letter-spacing: 0.04em;
+  padding: 0 2rem 0 0; border-right: 1px solid var(--rule);
+  height: 44px; display: flex; align-items: center; white-space: nowrap;
+}
+.nav-links { display: flex; gap: 0; }
+.nav-links a {
+  font-family: var(--mono); font-size: 0.65rem; color: var(--ink3);
+  text-decoration: none; padding: 0 1.1rem; height: 44px;
+  display: flex; align-items: center; border-right: 1px solid var(--rule);
+  transition: color 0.15s, background 0.15s; white-space: nowrap;
+}
+.nav-links a:hover { color: var(--accent); background: var(--accent-bg); }
+.nav-links a.cur { color: var(--accent); }
+.doc { display: grid; grid-template-columns: 17rem 1fr; min-height: 100vh; }
+.sidebar {
+  position: sticky; top: 44px; height: calc(100vh - 44px);
+  overflow-y: auto; padding: 2.5rem 1.5rem 2.5rem 2rem;
+  border-right: 1px solid var(--rule); background: var(--paper);
+}
+.sb-section { margin-bottom: 2rem; }
+.sb-label {
+  font-family: var(--mono); font-size: 0.62rem; color: var(--ink3);
+  text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; display: block;
+}
+.sb-links { display: flex; flex-direction: column; gap: 0; }
+.sb-links a {
+  font-family: var(--mono); font-size: 0.7rem; color: var(--ink2);
+  text-decoration: none; padding: 0.35rem 0.6rem;
+  border-left: 2px solid transparent; transition: all 0.15s; line-height: 1.4;
+}
+.sb-links a:hover { color: var(--accent); border-left-color: var(--rule); }
+.sb-links a.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-bg); }
+.sb-links a .sub { display: block; font-size: 0.62rem; color: var(--ink3); margin-top: 0.1rem; }
+.sb-meta {
+  font-family: var(--mono); font-size: 0.62rem; color: var(--ink3);
+  line-height: 1.7; border-top: 1px solid var(--rule2);
+  padding-top: 1.5rem; margin-top: 1.5rem;
+}
+.sb-meta a { color: var(--accent); text-decoration: none; }
+main { padding: 4rem 5rem 6rem 4rem; max-width: 860px; }
+.abstract {
+  border: 1px solid var(--rule); padding: 1.5rem 2rem;
+  margin-bottom: 3rem; background: var(--paper);
+}
+.abstract-label {
+  font-family: var(--mono); font-size: 0.62rem; color: var(--ink3);
+  text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; display: block;
+}
+.abstract p { font-size: 0.9rem; color: var(--ink2); line-height: 1.8; font-style: italic; }
+.kw { margin-top: 1rem; font-family: var(--mono); font-size: 0.62rem; color: var(--ink3); }
+.kw span { color: var(--ink2); }
+.title-block { margin-bottom: 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid var(--rule); }
+.doc-id { font-family: var(--mono); font-size: 0.68rem; color: var(--ink3); margin-bottom: 1rem; display: block; }
+h1 { font-family: var(--serif); font-size: 1.8rem; font-weight: 500; line-height: 1.3; color: var(--ink); margin-bottom: 0.75rem; }
+.byline { font-family: var(--mono); font-size: 0.68rem; color: var(--ink3); margin-top: 0.5rem; }
+.section { margin-bottom: 4rem; }
+.section-anchor { scroll-margin-top: 56px; }
+h2 {
+  font-family: var(--mono); font-size: 0.72rem; font-weight: 500;
+  color: var(--ink3); text-transform: uppercase; letter-spacing: 0.1em;
+  margin-bottom: 1.25rem; padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--rule);
+  display: flex; align-items: baseline; gap: 1rem;
+}
+h2 .sec-n { color: var(--ink3); font-weight: 400; }
+h3 { font-family: var(--serif); font-size: 1.05rem; font-weight: 500; color: var(--ink); margin-bottom: 0.75rem; margin-top: 2rem; }
+p { font-size: 0.92rem; color: var(--ink2); line-height: 1.85; margin-bottom: 1rem; max-width: 68ch; }
+code { font-family: var(--mono); font-size: 0.8rem; background: var(--code-bg); padding: 0.1rem 0.35rem; color: var(--ink); }
+.metrics {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--rule); margin: 1.5rem 0; background: var(--paper);
+}
+.metric { padding: 1.25rem 1rem; border-right: 1px solid var(--rule); }
+.metric:last-child { border-right: none; }
+.metric-val { font-family: var(--mono); font-size: 1.4rem; font-weight: 500; color: var(--ink); display: block; margin-bottom: 0.25rem; }
+.metric-label { font-family: var(--mono); font-size: 0.62rem; color: var(--ink3); display: block; margin-bottom: 0.2rem; }
+.metric-note { font-size: 0.75rem; color: var(--ink3); font-style: italic; }
+.metric-cite { font-family: var(--mono); font-size: 0.58rem; color: var(--accent); display: block; margin-top: 0.3rem; }
+.tbl-wrap { margin: 1.5rem 0; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+th {
+  font-family: var(--mono); font-size: 0.62rem; color: var(--ink3);
+  text-align: left; padding: 0.6rem 1rem;
+  border-bottom: 2px solid var(--rule);
+  text-transform: uppercase; letter-spacing: 0.08em; font-weight: 400;
+  background: var(--paper);
+}
+td { padding: 0.65rem 1rem; border-bottom: 1px solid var(--rule2); color: var(--ink2); vertical-align: top; line-height: 1.6; }
+tr:hover td { background: var(--accent-bg); }
+td:first-child { font-family: var(--mono); font-size: 0.75rem; color: var(--ink); }
+.badge { font-family: var(--mono); font-size: 0.6rem; padding: 0.1rem 0.4rem; border: 1px solid; display: inline-block; margin-left: 0.3rem; }
+.b-pass { border-color: var(--pass); color: var(--pass); }
+.b-warn { border-color: var(--warn); color: var(--warn); }
+.b-note { border-color: var(--ink3); color: var(--ink3); }
+.diag { border: 1px solid var(--rule); margin: 1.5rem 0; background: var(--paper); }
+.diag-caption {
+  font-family: var(--mono); font-size: 0.62rem; color: var(--ink3);
+  padding: 0.6rem 1rem; border-bottom: 1px solid var(--rule);
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.4rem;
+}
+.diag-caption .dc-tags { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.diag-caption .dc-tag { font-family: var(--mono); font-size: 0.58rem; padding: 0.1rem 0.4rem; border: 1px solid var(--rule); color: var(--ink3); }
+.diag-caption .dc-tag.hl { border-color: var(--accent); color: var(--accent); }
+.diag-body { padding: 1.5rem; }
+.pipeline { display: flex; align-items: flex-start; gap: 0; overflow-x: auto; font-family: var(--mono); }
+.pipe-stage { flex: 1; min-width: 100px; }
+.pipe-box {
+  border: 1px solid var(--rule); padding: 0.75rem 0.5rem;
+  text-align: center; background: var(--paper); transition: background 0.15s;
+}
+.pipe-box:hover { background: var(--accent-bg); }
+.pipe-box.hl { border-color: var(--accent); background: var(--accent-bg); }
+.pipe-box.warn { border-color: var(--warn); background: var(--warn-bg); }
+.pipe-n { font-family: var(--mono); font-size: 0.55rem; color: var(--ink3); display: block; margin-bottom: 0.3rem; }
+.pipe-name { font-size: 0.72rem; color: var(--ink); font-weight: 500; }
+.pipe-sub { font-size: 0.62rem; color: var(--ink3); margin-top: 0.2rem; display: block; }
+.pipe-arrow { display: flex; align-items: flex-start; padding-top: 0.9rem; color: var(--ink3); font-size: 0.8rem; padding-left: 0.25rem; padding-right: 0.25rem; flex-shrink: 0; }
+.layers { border: 1px solid var(--rule); margin: 1.5rem 0; }
+.layer-row { display: grid; grid-template-columns: 6rem 1fr; border-bottom: 1px solid var(--rule2); }
+.layer-row:last-child { border-bottom: none; }
+.layer-lbl { font-family: var(--mono); font-size: 0.6rem; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.1em; padding: 0.85rem 0.75rem; border-right: 1px solid var(--rule2); background: var(--paper); display: flex; align-items: center; }
+.layer-content { padding: 0.85rem 1rem; display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+.lchip { font-family: var(--mono); font-size: 0.62rem; color: var(--ink2); padding: 0.15rem 0.5rem; border: 1px solid var(--rule); }
+.lchip.hl { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+.lchip.free { border-color: var(--pass); color: var(--pass); background: var(--pass-bg); }
+.lchip.warn { border-color: var(--warn); color: var(--warn); background: var(--warn-bg); }
+.callout { border-left: 3px solid; padding: 1rem 1.5rem; margin: 1.5rem 0; }
+.callout.note { border-color: var(--accent); background: var(--accent-bg); }
+.callout.warn { border-color: var(--warn); background: var(--warn-bg); }
+.callout.pass { border-color: var(--pass); background: var(--pass-bg); }
+.callout-label { font-family: var(--mono); font-size: 0.62rem; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 0.5rem; }
+.callout p { margin-bottom: 0; max-width: none; }
+.code-block {
+  background: #1e1e1e; color: #d4d4d4;
+  border: 1px solid var(--rule); margin: 1.5rem 0;
+  font-family: var(--mono); font-size: 0.72rem; line-height: 1.7;
+  overflow-x: auto;
+}
+.code-header {
+  background: #2d2d2d; padding: 0.5rem 1rem;
+  font-size: 0.62rem; color: #888; border-bottom: 1px solid #444;
+  display: flex; justify-content: space-between;
+}
+.code-body { padding: 1rem 1.5rem; }
+.c-kw  { color: #569cd6; }
+.c-str { color: #ce9178; }
+.c-cmt { color: #6a9955; font-style: italic; }
+.c-fn  { color: #dcdcaa; }
+.c-num { color: #b5cea8; }
+.c-cls { color: #4ec9b0; }
+.c-var { color: #9cdcfe; }
+.c-dec { color: #c586c0; }
+/* SIMULATOR */
+.sim { border: 1px solid var(--rule); background: var(--paper); margin: 1.5rem 0; }
+.sim-hdr { padding: 0.6rem 1rem; border-bottom: 1px solid var(--rule); display: flex; justify-content: space-between; align-items: center; background: var(--code-bg); font-family: var(--mono); font-size: 0.68rem; }
+.sim-status { color: var(--ink3); display: flex; align-items: center; gap: 0.4rem; }
+.sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--ink3); display: inline-block; }
+.sdot.on { background: var(--pass); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.sim-body { display: grid; grid-template-columns: 14rem 1fr; }
+.sim-l { padding: 1rem; border-right: 1px solid var(--rule); }
+.sim-r { padding: 1rem; }
+.sim-lbl { font-family: var(--mono); font-size: 0.6rem; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 0.75rem; }
+.sc-list { display: flex; flex-direction: column; gap: 0; margin-bottom: 1rem; }
+.sc-btn { font-family: var(--mono); font-size: 0.65rem; color: var(--ink2); background: none; border: 1px solid var(--rule2); padding: 0.45rem 0.6rem; text-align: left; cursor: pointer; transition: all 0.15s; margin-bottom: 2px; }
+.sc-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+.sc-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+.sc-desc { font-size: 0.75rem; color: var(--ink2); line-height: 1.6; margin-bottom: 1rem; padding: 0.75rem; background: var(--accent-bg); border: 1px solid var(--rule2); }
+.run-btn { font-family: var(--mono); font-size: 0.65rem; color: var(--paper); background: var(--accent); border: none; padding: 0.5rem 1rem; cursor: pointer; width: 100%; transition: background 0.15s; }
+.run-btn:hover { background: #2d5a7a; }
+.run-btn:disabled { background: var(--ink3); cursor: not-allowed; }
+.pip-steps { margin-bottom: 0.75rem; }
+.srow { display: grid; grid-template-columns: 1.5rem 1fr 4rem 4.5rem; gap: 0.5rem; align-items: center; padding: 0.3rem 0.3rem; font-family: var(--mono); font-size: 0.65rem; border-bottom: 1px solid var(--rule2); transition: background 0.1s; }
+.srow.active-s { background: var(--accent-bg); }
+.sic { color: var(--ink3); font-size: 0.8rem; text-align: center; }
+.sic.run { color: var(--warn); }
+.sic.done { color: var(--pass); }
+.sname { color: var(--ink2); line-height: 1.3; }
+.sname span { display: block; font-size: 0.58rem; color: var(--ink3); }
+.stime { color: var(--ink3); text-align: right; }
+.sstatus { font-size: 0.58rem; text-align: right; }
+.sstatus.w { color: var(--ink3); }
+.sstatus.r { color: var(--warn); }
+.sstatus.p { color: var(--pass); }
+.result-box { border: 1px solid var(--rule2); padding: 0.75rem; font-family: var(--mono); font-size: 0.65rem; background: #1e1e1e; color: #999; min-height: 4rem; }
+.result-box.has-result { color: #d4d4d4; }
+.rtag { display: inline-block; padding: 0.1rem 0.4rem; margin-right: 0.3rem; font-size: 0.62rem; }
+.rtag.a { background: #2d3d2d; color: #9cdcfe; }
+.rtag.g { background: #1e3a2e; color: #6a9955; }
+.rtag.w { background: #3d2d1e; color: #ce9178; }
+/* ADR */
+.adr { border: 1px solid var(--rule); margin: 1.5rem 0; }
+.adr-header { background: var(--code-bg); padding: 0.75rem 1rem; border-bottom: 1px solid var(--rule); display: flex; justify-content: space-between; align-items: center; }
+.adr-id { font-family: var(--mono); font-size: 0.68rem; color: var(--accent); }
+.adr-status { font-family: var(--mono); font-size: 0.6rem; padding: 0.1rem 0.4rem; border: 1px solid var(--pass); color: var(--pass); }
+.adr-title { font-family: var(--serif); font-size: 0.95rem; font-weight: 500; color: var(--ink); padding: 0.75rem 1rem 0; }
+.adr-body { padding: 0.5rem 1rem 1rem; }
+.adr-section { margin-top: 0.75rem; }
+.adr-section-label { font-family: var(--mono); font-size: 0.6rem; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.3rem; display: block; }
+.adr-section p { font-size: 0.82rem; margin-bottom: 0.3rem; }
+/* TRADEOFF */
+.tradeoff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--rule); border: 1px solid var(--rule); margin: 1.5rem 0; }
+.tq { background: var(--paper); padding: 1rem; }
+.tq-label { font-family: var(--mono); font-size: 0.6rem; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; display: block; }
+.tq-title { font-family: var(--serif); font-size: 0.9rem; font-weight: 500; color: var(--ink); margin-bottom: 0.4rem; }
+.tq-body { font-size: 0.78rem; color: var(--ink2); line-height: 1.6; }
+.tq-verdict { font-family: var(--mono); font-size: 0.62rem; margin-top: 0.5rem; padding: 0.2rem 0.5rem; display: inline-block; }
+.tq-verdict.chose { background: var(--pass-bg); color: var(--pass); border: 1px solid var(--pass); }
+.tq-verdict.rejected { background: var(--fail-bg); color: var(--fail); border: 1px solid var(--fail); }
+/* HOW LIST */
+.how-list { margin: 1.5rem 0; border: 1px solid var(--rule); }
+.how-row { display: grid; grid-template-columns: 3rem 1fr 6rem; border-bottom: 1px solid var(--rule2); align-items: center; }
+.how-row:last-child { border-bottom: none; }
+.how-n { font-family: var(--mono); font-size: 0.72rem; color: var(--accent); padding: 0.75rem; border-right: 1px solid var(--rule2); text-align: center; background: var(--paper); }
+.how-desc { padding: 0.75rem 1rem; font-size: 0.82rem; color: var(--ink2); line-height: 1.6; }
+.how-t { padding: 0.75rem; font-family: var(--mono); font-size: 0.6rem; color: var(--ink3); border-left: 1px solid var(--rule2); text-align: right; background: var(--paper); }
+/* STRAT LIST */
+.strat-list { margin: 1.5rem 0; }
+.strat-row { display: grid; grid-template-columns: 11rem 1fr 9rem; gap: 0; border-bottom: 1px solid var(--rule2); padding: 1rem 0; align-items: start; }
+.strat-row:first-child { border-top: 1px solid var(--rule); }
+.strat-name { font-family: var(--mono); font-size: 0.72rem; color: var(--ink); padding-right: 1.5rem; }
+.strat-name code { background: none; padding: 0; font-size: 0.68rem; color: var(--accent); }
+.strat-desc { font-size: 0.82rem; color: var(--ink2); line-height: 1.7; }
+.strat-best { font-family: var(--mono); font-size: 0.62rem; color: var(--ink3); line-height: 1.5; }
+/* FUSION COLS */
+.fusion-cols { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 0; }
+.f-col-title { font-family: var(--mono); font-size: 0.6rem; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.08em; text-align: center; padding-bottom: 0.75rem; border-bottom: 1px solid var(--rule); margin-bottom: 0.75rem; }
+.f-item { border: 1px solid var(--rule2); padding: 0.4rem 0.6rem; margin-bottom: 0.3rem; font-family: var(--mono); font-size: 0.65rem; color: var(--ink2); display: flex; justify-content: space-between; background: var(--paper); }
+.f-item .sc { color: var(--accent); }
+.f-item.top { border-color: var(--accent); background: var(--accent-bg); }
+.f-item.top .sc { color: var(--pass); }
+.f-arrow { display: flex; align-items: center; justify-content: center; padding: 0 0.75rem; color: var(--ink3); font-size: 0.8rem; padding-top: 2.5rem; }
+/* REF LIST */
+.ref-list { margin: 1.5rem 0; }
+.ref-item { display: grid; grid-template-columns: 2.5rem 1fr; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid var(--rule2); font-size: 0.8rem; }
+.ref-num { font-family: var(--mono); font-size: 0.65rem; color: var(--accent); }
+.ref-body { color: var(--ink2); line-height: 1.5; }
+.ref-body em { color: var(--ink3); font-style: normal; font-family: var(--mono); font-size: 0.68rem; }
+/* AGENT DETAIL */
+.agent-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--rule); border: 1px solid var(--rule); margin: 1.5rem 0; }
+.agent-card { background: var(--paper); padding: 1.1rem; }
+.agent-name { font-family: var(--mono); font-size: 0.72rem; font-weight: 500; color: var(--accent); margin-bottom: 0.4rem; }
+.agent-role { font-family: var(--serif); font-size: 0.9rem; font-weight: 500; color: var(--ink); margin-bottom: 0.4rem; }
+.agent-desc { font-size: 0.78rem; color: var(--ink2); line-height: 1.6; margin-bottom: 0.5rem; }
+.agent-io { font-family: var(--mono); font-size: 0.62rem; color: var(--ink3); line-height: 1.8; }
+.agent-io .key { color: var(--ink); }
+/* ALPHA BAR */
+.alpha-bar { margin: 1rem 0; }
+.alpha-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.4rem; }
+.alpha-label { font-family: var(--mono); font-size: 0.65rem; color: var(--ink2); min-width: 8rem; }
+.alpha-track { flex: 1; height: 6px; background: var(--rule2); position: relative; }
+.alpha-fill { height: 100%; background: var(--accent); }
+.alpha-val { font-family: var(--mono); font-size: 0.62rem; color: var(--ink3); min-width: 3rem; text-align: right; }
+/* SVG DIAGRAM */
+.svg-wrap { padding: 1.5rem; overflow-x: auto; }
+.svg-wrap svg { display: block; max-width: 100%; }
+footer {
+  background: var(--paper); border-top: 1px solid var(--rule);
+  padding: 1rem 2rem; font-family: var(--mono); font-size: 0.62rem;
+  color: var(--ink3); display: flex; justify-content: space-between;
+}
+footer a { color: var(--accent); text-decoration: none; }
+</style>
 </head>
 <body>
 
-<h1>Multi-Agent Research & Report Generator</h1>
+<nav>
+  <span class="nav-title">MARG · v0.1 · Architecture Design Document</span>
+  <div class="nav-links">
+    <a href="#motivation">§1 Motivation</a>
+    <a href="#architecture">§2 Architecture</a>
+    <a href="#agents">§3 Agents</a>
+    <a href="#state">§4 State &amp; Flow</a>
+    <a href="#implementation">§5 Implementation</a>
+    <a href="#deployment">§6 Deployment</a>
+    <a href="#adr">§7 ADRs</a>
+    <a href="#simulator">§8 Simulator</a>
+    <a href="#references">§9 References</a>
+  </div>
+</nav>
 
-<h2>1. Description</h2>
-<p>A multi-agent LLM-powered system designed to conduct in-depth, structured research on user-defined topics and automatically generate comprehensive, well-organized reports. The system orchestrates specialized agents that plan research scope, gather information from public web sources, synthesize findings, critique intermediate outputs, and format final deliverables in professional Markdown or PDF format. The core innovation lies in its graph-based, stateful workflow that enables iterative refinement, self-correction, and transparent reasoning traces – addressing common shortcomings of single-pass LLM research tools such as shallow coverage, hallucinations, and lack of source attribution.</p>
+<div class="doc">
+<aside class="sidebar">
+  <div class="sb-section">
+    <span class="sb-label">Document</span>
+    <div class="sb-links">
+      <a href="#top">MARG — Overview</a>
+      <a href="#abstract">Abstract</a>
+    </div>
+  </div>
+  <div class="sb-section">
+    <span class="sb-label">§1 Motivation</span>
+    <div class="sb-links">
+      <a href="#motivation">1.1 Problem Statement</a>
+      <a href="#failure-modes">1.2 Failure Modes</a>
+      <a href="#value-stream">1.3 Value Stream</a>
+    </div>
+  </div>
+  <div class="sb-section">
+    <span class="sb-label">§2 Architecture</span>
+    <div class="sb-links">
+      <a href="#architecture">2.1 System Context (C4 L1)</a>
+      <a href="#container-view">2.2 Container View (C4 L2)</a>
+      <a href="#graph-topology">2.3 Graph Topology</a>
+      <a href="#tech-stack">2.4 Technology Stack</a>
+    </div>
+  </div>
+  <div class="sb-section">
+    <span class="sb-label">§3 Agents</span>
+    <div class="sb-links">
+      <a href="#agents">3.1 Agent Catalogue</a>
+      <a href="#planner">3.2 Planner Agent</a>
+      <a href="#researcher">3.3 Researcher Agent</a>
+      <a href="#synthesizer">3.4 Synthesizer Agent</a>
+      <a href="#critic">3.5 Critic Agent</a>
+      <a href="#formatter">3.6 Formatter Agent</a>
+    </div>
+  </div>
+  <div class="sb-section">
+    <span class="sb-label">§4 State &amp; Flow</span>
+    <div class="sb-links">
+      <a href="#state">4.1 State Schema</a>
+      <a href="#data-flow">4.2 Data Flow</a>
+      <a href="#critique-loop">4.3 Critique Loop</a>
+      <a href="#conflict">4.4 Conflict Resolution</a>
+    </div>
+  </div>
+  <div class="sb-section">
+    <span class="sb-label">§5 Implementation</span>
+    <div class="sb-links">
+      <a href="#implementation">5.1 Graph Definition</a>
+      <a href="#search-tool">5.2 Search Tool</a>
+      <a href="#api">5.3 API Contract</a>
+      <a href="#observability">5.4 Observability</a>
+    </div>
+  </div>
+  <div class="sb-section">
+    <span class="sb-label">§6 Deployment</span>
+    <div class="sb-links">
+      <a href="#deployment">6.1 Topology</a>
+      <a href="#iam">6.2 IAM &amp; Security</a>
+      <a href="#sre">6.3 SRE &amp; Resilience</a>
+    </div>
+  </div>
+  <div class="sb-section">
+    <span class="sb-label">§7–9</span>
+    <div class="sb-links">
+      <a href="#adr">7 Architecture Decisions</a>
+      <a href="#simulator">8 Live Simulator</a>
+      <a href="#references">9 References</a>
+    </div>
+  </div>
+  <div class="sb-meta">
+    Doc: MARG-ADD-001<br>
+    Status: <span style="color:var(--pass)">Draft v0.1</span><br>
+    Stack: LangGraph · Ollama · DuckDuckGo<br>
+    Deploy: Docker / Cloud Run<br>
+    Author: Siddharth Rao<br><br>
+    <a href="mailto:rao.siddharth@gmail.com">rao.siddharth@gmail.com</a>
+  </div>
+</aside>
 
-<h2>2. Executive Summary</h2>
-<p>The Multi-Agent Research & Report Generator represents a shift from monolithic LLM query-response patterns toward orchestrated, agentic workflows capable of performing complex, multi-step cognitive tasks. By decomposing research into distinct phases handled by purpose-built agents, the system achieves higher factual accuracy, deeper analytical coverage, and structured output suitable for strategic decision-making. Built entirely on open-source components and runnable locally or via lightweight cloud-free deployment, the project serves as both a demonstrable prototype of contemporary agentic AI architecture and a foundation for extensible enterprise knowledge synthesis tools.</p>
+<main>
 
-<h2>3. Business Strategy</h2>
+<!-- TITLE -->
+<div class="title-block" id="top">
+  <span class="doc-id">MARG-ADD-001 · Architecture Design Document · v0.1 · 2025</span>
+  <h1>Multi-Agent Research &amp; Report Generator</h1>
+  <p style="margin-bottom:0.5rem;max-width:none;">Graph-based agentic workflow for autonomous, iterative research and structured report synthesis using open-source LLMs.</p>
+  <div class="byline">Siddharth Rao · Enterprise AI Architect · TOGAF EA · GCP CA · MLE · Gen AI Leader</div>
+</div>
 
-<h3>3.1 Strategic Value Proposition</h3>
-<p>The system delivers measurable time compression for knowledge-intensive tasks that currently require hours or days of manual research. It provides consistent report structure, traceable sources, and built-in quality assurance loops while maintaining full data privacy through local execution options. The primary value lies in enabling small teams and individual professionals to produce research outputs comparable to those of dedicated analysts, thereby leveling access to high-quality market, competitive, technical, and strategic intelligence.</p>
+<!-- ABSTRACT -->
+<div class="abstract" id="abstract">
+  <span class="abstract-label">Abstract</span>
+  <p>MARG is a stateful, graph-based multi-agent system that decomposes the research and report generation task into five specialised agent roles — Planner, Researcher, Synthesizer, Critic, and Formatter — orchestrated by a LangGraph state machine. The architecture addresses the structural failure modes of single-pass LLM research tools: shallow coverage caused by a single retrieval context window, hallucinations caused by the absence of a grounding loop, and unattributed claims caused by no explicit source-tracking discipline. The Critic Agent introduces a scored quality gate whose output drives conditional re-research or re-synthesis until a configurable threshold is met, making iterative self-correction an architectural property rather than an operator concern. The system is deployable locally via Docker Compose with Ollama and publicly via a single Cloud Run container on the GCP free tier.</p>
+  <div class="kw">Keywords: <span>Multi-Agent Systems · LangGraph · Stateful Workflows · Agentic AI · Ollama · Open-Source LLMs · Iterative Critique · Report Synthesis · RAG · Self-Correction · Cloud Run · Docker</span></div>
+</div>
 
-<h3>3.2 Regulatory Strategy</h3>
-<p>All data processing occurs client-side or on user-controlled infrastructure. No user queries or generated content are transmitted to third-party logging services by default. Web search interactions are limited to public APIs with no authentication. Future extensions will incorporate configurable content filters and output redaction capabilities to support domains with heightened compliance requirements. The architecture explicitly separates research retrieval from proprietary knowledge ingestion paths to facilitate regulated deployments.</p>
+<!-- §1 MOTIVATION -->
+<section class="section" id="motivation">
+  <h2><span class="sec-n">§1</span> Motivation &amp; Problem Statement</h2>
 
-<h2>4. Users</h2>
+  <p>The single-pass LLM research pattern — submit query, receive response — is architecturally incapable of producing research-grade outputs. The failure is not a model capability problem. It is a structural problem: the pattern provides no mechanism for scope decomposition, iterative retrieval, multi-source grounding, or quality verification. MARG is the architectural remedy.</p>
 
-<h3>4.1 Target User Personas</h3>
-<ul>
-  <li><strong>Indie Consultant / Solo Founder</strong>: Needs rapid market landscaping, competitor analysis, and investor deck research support.</li>
-  <li><strong>Product Manager</strong>: Requires technical deep dives, feature comparisons, and emerging trend reports.</li>
-  <li><strong>Developer Advocate / Technical Writer</strong>: Seeks structured overviews of new frameworks, protocols, or ecosystem developments.</li>
-  <li><strong>Strategy Analyst (SMB)</strong>: Performs regular industry monitoring and opportunity identification without dedicated research staff.</li>
-  <li><strong>Academic Researcher (early-stage)</strong>: Uses the tool for literature scanning and hypothesis landscaping prior to formal academic database access.</li>
-</ul>
+  <div class="metrics">
+    <div class="metric">
+      <span class="metric-label">Time compression</span>
+      <span class="metric-val">~80%</span>
+      <span class="metric-note">reduction in initial research phase duration vs. manual analyst workflow</span>
+      <span class="metric-cite">target SLO · PI-3</span>
+    </div>
+    <div class="metric">
+      <span class="metric-label">Source attribution</span>
+      <span class="metric-val">100%</span>
+      <span class="metric-note">claims in final report carry a traceable source link — structural, not heuristic</span>
+      <span class="metric-cite">Formatter Agent contract</span>
+    </div>
+    <div class="metric">
+      <span class="metric-label">Critique cycles</span>
+      <span class="metric-val">≤3</span>
+      <span class="metric-note">max Critic→Synthesizer re-synthesis loops before escalation to operator</span>
+      <span class="metric-cite">graph edge constraint</span>
+    </div>
+    <div class="metric">
+      <span class="metric-label">Local-first</span>
+      <span class="metric-val">$0</span>
+      <span class="metric-note">API cost for full demo-tier operation — all inference via Ollama local container</span>
+      <span class="metric-cite">free-tier target</span>
+    </div>
+  </div>
 
-<h3>4.2 Lightweight Requirements and User Stories</h3>
-<p>As a user, I want to:</p>
-<ul>
-  <li>Enter a research topic and receive a comprehensive report within minutes.</li>
-  <li>Specify desired depth (quick overview vs. exhaustive analysis) and output format.</li>
-  <li>View source links for every claim in the final report.</li>
-  <li>See the step-by-step reasoning trace of how conclusions were reached.</li>
-  <li>Save or export reports in Markdown/PDF with consistent professional formatting.</li>
-  <li>Run the entire system locally to ensure data privacy.</li>
-</ul>
+  <h3 id="failure-modes">1.1 Failure Modes in Single-Pass LLM Research</h3>
 
-<h3>4.3 User Journey Map</h3>
-<ol>
-  <li>User accesses web interface → enters research query and optional parameters (depth, focus areas).</li>
-  <li>System displays real-time progress log showing active agent and current task.</li>
-  <li>User observes intermediate artifacts (outline, raw search results, draft sections) if desired.</li>
-  <li>System completes iteration cycles → final report rendered with table of contents, executive summary, detailed sections, and references.</li>
-  <li>User downloads report or copies content → optionally provides feedback for future improvements.</li>
-</ol>
+  <p>These are not edge cases. They are the expected output characteristics of a single-pass retrieval-generation pattern applied to research tasks of non-trivial depth.</p>
 
-<h2>5. Design and Architecture</h2>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Failure mode</th><th>Cause</th><th>MARG structural remedy</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Shallow coverage</td>
+          <td>Single retrieval call; context window is the upper bound on information gathered</td>
+          <td>Planner decomposes topic into N sub-queries; Researcher executes each independently across multiple search calls</td>
+        </tr>
+        <tr>
+          <td>Hallucinated claims</td>
+          <td>LLM fills retrieval gaps with plausible fabrication; no verification step</td>
+          <td>Critic Agent scores factual consistency as a first-class dimension; low score triggers re-research, not re-generation from stale context</td>
+        </tr>
+        <tr>
+          <td>No source attribution</td>
+          <td>Source URLs are not tracked through the generation pipeline</td>
+          <td>Researcher Agent writes <code>(source_url, snippet)</code> tuples to state; Formatter enforces citation presence per claim</td>
+        </tr>
+        <tr>
+          <td>No quality gate</td>
+          <td>Output goes directly to user regardless of quality; no internal verification</td>
+          <td>Critic Agent scores across four dimensions; scores below threshold route back through graph before delivery</td>
+        </tr>
+        <tr>
+          <td>Opaque reasoning</td>
+          <td>Chain-of-thought is discarded; user cannot audit how conclusions were reached</td>
+          <td>Each agent appends its rationale to <code>state.trace</code>; full trace is preserved and optionally surfaced in UI</td>
+        </tr>
+        <tr>
+          <td>Uncontrolled scope drift</td>
+          <td>LLM interprets topic breadth ad hoc; adjacent topics pulled in without constraint</td>
+          <td>Planner generates a bounded outline with section weights; Synthesizer is constrained to outline structure; Critic penalises scope violation</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
-<h3>5.1 Phase A: Vision</h3>
-<p>Establish an agentic research workflow that mirrors human expert research processes: scope definition, information gathering, synthesis, critical review, and polished delivery. The system must remain transparent, controllable, and extensible.</p>
+  <h3 id="value-stream">1.2 Target Value Stream</h3>
 
-<h3>5.2 Phase B: Business</h3>
-<p>Core capabilities: topic scoping, web research, multi-perspective synthesis, quality assurance, structured reporting. Success metrics: report completeness, source attribution accuracy, user time saved, subjective quality rating.</p>
+  <div class="how-list">
+    <div class="how-row">
+      <div class="how-n">01</div>
+      <div class="how-desc"><strong>Query intake.</strong> User submits research topic with optional depth and focus-area parameters via API or UI. Input validation, parameter normalisation, and session initialisation.</div>
+      <div class="how-t">~0s</div>
+    </div>
+    <div class="how-row">
+      <div class="how-n">02</div>
+      <div class="how-desc"><strong>Research planning.</strong> Planner Agent generates a scoped outline with N sections and relative weights. Decomposition into atomic sub-queries per section. Research plan written to state.</div>
+      <div class="how-t">~8–15s</div>
+    </div>
+    <div class="how-row">
+      <div class="how-n">03</div>
+      <div class="how-desc"><strong>Information retrieval.</strong> Researcher Agent executes DuckDuckGo searches per sub-query. Snippets, titles, and URLs extracted and scored by relevance. Source map appended to state.</div>
+      <div class="how-t">~20–60s</div>
+    </div>
+    <div class="how-row">
+      <div class="how-n">04</div>
+      <div class="how-desc"><strong>Section synthesis.</strong> Synthesizer Agent drafts each report section from outline and gathered sources. Inline citations injected. Draft sections written to state.</div>
+      <div class="how-t">~30–90s</div>
+    </div>
+    <div class="how-row">
+      <div class="how-n">05</div>
+      <div class="how-desc"><strong>Critic evaluation.</strong> Critic Agent scores draft across four dimensions. Scores below threshold route back to Researcher (if retrieval gap) or Synthesizer (if synthesis quality). Max 3 iterations.</div>
+      <div class="how-t">~10–20s</div>
+    </div>
+    <div class="how-row">
+      <div class="how-n">06</div>
+      <div class="how-desc"><strong>Report formatting.</strong> Formatter Agent applies structure: executive summary, table of contents, section bodies, reference list. Disclosure header applied per responsible AI policy.</div>
+      <div class="how-t">~8–12s</div>
+    </div>
+    <div class="how-row">
+      <div class="how-n">07</div>
+      <div class="how-desc"><strong>Delivery.</strong> Structured Markdown or PDF delivered to caller with full source map, reasoning trace, quality scores, and iteration count. Session checkpointed to disk.</div>
+      <div class="how-t">~0s</div>
+    </div>
+  </div>
+</section>
 
-<h3>5.3 Phase C: Information</h3>
-<p>Information flows through a persistent state object containing: original query, generated outline, search results, draft sections, critique feedback, final report, and metadata (sources, timestamps). All state transitions are logged for traceability.</p>
+<!-- §2 ARCHITECTURE -->
+<section class="section" id="architecture">
+  <h2><span class="sec-n">§2</span> System Architecture</h2>
 
-<h3>5.4 Phase D: Technology</h3>
-<ul>
-  <li>Orchestration: LangGraph (stateful graph-based workflow engine)</li>
-  <li>LLM backend: Configurable open-source models via Ollama (default: Llama 3.1 8B/70B or Mistral Large)</li>
-  <li>Search tool: DuckDuckGo search wrapper (privacy-preserving, no API key required)</li>
-  <li>Vector store (future): Chroma or FAISS for optional long-term memory</li>
-  <li>Frontend: Streamlit or Gradio for interactive experience</li>
-  <li>Persistence: Local JSON checkpoints for resumable workflows</li>
-</ul>
+  <h3>2.1 C4 Level 1 — System Context</h3>
+  <p>The system context establishes the MARG boundary and its interactions with external actors and systems. MARG has two external dependencies: the local LLM inference runtime (Ollama) and the public web search API (DuckDuckGo). Neither dependency involves authentication or data egress of user queries by default.</p>
 
-<h2>6. Rollout and Roadmap - Implementation Phases and PI Mapping</h2>
+  <div class="diag">
+    <div class="diag-caption">
+      <span>Figure 1 — C4 Level 1 System Context · MARG boundary and external interactions</span>
+      <div class="dc-tags"><span class="dc-tag hl">C4 L1</span><span class="dc-tag">LangGraph</span><span class="dc-tag">Ollama</span></div>
+    </div>
+    <div class="svg-wrap">
+      <svg viewBox="0 0 780 380" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono',monospace">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M1 1L9 5L1 9" fill="none" stroke="#8a8784" stroke-width="1.5" stroke-linecap="round"/>
+          </marker>
+          <marker id="arr-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M1 1L9 5L1 9" fill="none" stroke="#3d6b8e" stroke-width="1.5" stroke-linecap="round"/>
+          </marker>
+        </defs>
 
-<h3>6.1 Current State</h3>
-<p>MVP with five core agents, basic web search integration, Markdown report output, and local execution capability.</p>
+        <!-- user -->
+        <rect x="20" y="140" width="110" height="80" fill="#faf9f7" stroke="#dddbd6" stroke-width="1"/>
+        <text x="75" y="168" font-size="9" fill="#8a8784" text-anchor="middle">[person]</text>
+        <text x="75" y="186" font-size="11" font-weight="500" fill="#1a1916" text-anchor="middle">User</text>
+        <text x="75" y="202" font-size="9" fill="#8a8784" text-anchor="middle">Researcher / Analyst</text>
 
-<h3>6.2 Future State</h3>
-<ul>
-  <li>Multi-modal inputs (PDF upload, image analysis)</li>
-  <li>Custom knowledge base integration</li>
-  <li>Team collaboration features</li>
-  <li>API exposure for workflow embedding</li>
-  <li>Advanced critique loops with quantitative scoring</li>
-</ul>
+        <!-- MARG system boundary -->
+        <rect x="220" y="40" width="340" height="300" fill="#eef3f7" stroke="#3d6b8e" stroke-width="1" rx="4"/>
+        <text x="390" y="60" font-size="8" fill="#3d6b8e" text-anchor="middle" letter-spacing="1">[ S O F T W A R E   S Y S T E M ]</text>
+        <text x="390" y="82" font-size="14" font-weight="500" fill="#1a1916" text-anchor="middle">MARG</text>
+        <text x="390" y="100" font-size="9.5" fill="#4a4845" text-anchor="middle">Multi-Agent Research &amp;</text>
+        <text x="390" y="116" font-size="9.5" fill="#4a4845" text-anchor="middle">Report Generator</text>
+        <text x="390" y="144" font-size="8.5" fill="#8a8784" text-anchor="middle">LangGraph graph execution engine</text>
+        <text x="390" y="160" font-size="8.5" fill="#8a8784" text-anchor="middle">5-agent stateful workflow</text>
+        <text x="390" y="176" font-size="8.5" fill="#8a8784" text-anchor="middle">Planner · Researcher · Synthesizer</text>
+        <text x="390" y="192" font-size="8.5" fill="#8a8784" text-anchor="middle">Critic · Formatter</text>
+        <text x="390" y="216" font-size="8" fill="#3d6b8e" text-anchor="middle">FastAPI · Docker / Cloud Run</text>
+        <text x="390" y="232" font-size="8" fill="#3d6b8e" text-anchor="middle">Local JSON checkpoints · Streamlit UI</text>
 
-<h3>6.3 Agile Delivery - ART</h3>
-<p>Program Increment structure:</p>
-<ul>
-  <li>PI-1: Core graph workflow and single-agent baseline</li>
-  <li>PI-2: Multi-agent orchestration and critique loop</li>
-  <li>PI-3: Structured report formatting and source citation</li>
-  <li>PI-4: User interface and deployment options</li>
-  <li>PI-5: Observability, logging, and feedback integration</li>
-</ul>
+        <!-- ollama -->
+        <rect x="640" y="50" width="120" height="80" fill="#faf9f7" stroke="#dddbd6" stroke-width="1"/>
+        <text x="700" y="74" font-size="9" fill="#8a8784" text-anchor="middle">[ext. system]</text>
+        <text x="700" y="92" font-size="11" font-weight="500" fill="#1a1916" text-anchor="middle">Ollama</text>
+        <text x="700" y="108" font-size="9" fill="#8a8784" text-anchor="middle">Local LLM runtime</text>
+        <text x="700" y="122" font-size="8" fill="#3a7d5a" text-anchor="middle">Llama 3.1 · Mistral</text>
 
-<h3>6.4 Change Management</h3>
-<p>Open-source development with clear contribution guidelines. Version pinning for reproducible behavior. Extensive documentation of agent prompts and decision logic to enable community extensions.</p>
+        <!-- duckduckgo -->
+        <rect x="640" y="170" width="120" height="80" fill="#faf9f7" stroke="#dddbd6" stroke-width="1"/>
+        <text x="700" y="194" font-size="9" fill="#8a8784" text-anchor="middle">[ext. system]</text>
+        <text x="700" y="212" font-size="11" font-weight="500" fill="#1a1916" text-anchor="middle">DuckDuckGo</text>
+        <text x="700" y="228" font-size="9" fill="#8a8784" text-anchor="middle">Web search API</text>
+        <text x="700" y="242" font-size="8" fill="#3a7d5a" text-anchor="middle">no key · no PII egress</text>
 
-<h3>6.5 Target Value Stream</h3>
-<p>Query intake → Research planning → Information retrieval → Synthesis → Critical review → Report formatting → Delivery</p>
+        <!-- streamlit / storage -->
+        <rect x="640" y="290" width="120" height="70" fill="#faf9f7" stroke="#dddbd6" stroke-width="1"/>
+        <text x="700" y="312" font-size="9" fill="#8a8784" text-anchor="middle">[ext. storage]</text>
+        <text x="700" y="330" font-size="11" font-weight="500" fill="#1a1916" text-anchor="middle">Local FS</text>
+        <text x="700" y="346" font-size="8" fill="#8a8784" text-anchor="middle">JSON checkpoints</text>
 
-<h2>7. Multi-Agent Model</h2>
+        <!-- arrows: user → MARG -->
+        <line x1="130" y1="180" x2="218" y2="200" stroke="#3d6b8e" stroke-width="1" marker-end="url(#arr-acc)"/>
+        <text x="154" y="185" font-size="8" fill="#8a8784" text-anchor="middle">research query</text>
+        <line x1="218" y1="220" x2="130" y2="220" stroke="#8a8784" stroke-width="1" marker-end="url(#arr)"/>
+        <text x="154" y="234" font-size="8" fill="#8a8784" text-anchor="middle">Markdown / PDF report</text>
 
-<h3>7.1 Agent Personas</h3>
-<ul>
-  <li><strong>Planner Agent</strong>: Defines research scope, generates detailed outline with weighted sections.</li>
-  <li><strong>Researcher Agent</strong>: Executes targeted searches, extracts relevant snippets, maintains source tracking.</li>
-  <li><strong>Synthesizer Agent</strong>: Drafts coherent sections based on outline and gathered data.</li>
-  <li><strong>Critic Agent</strong>: Evaluates draft quality, factual consistency, coverage gaps, and tone appropriateness.</li>
-  <li><strong>Formatter Agent</strong>: Applies consistent structure, generates executive summary, table of contents, and reference list.</li>
-</ul>
+        <!-- arrows: MARG → Ollama -->
+        <line x1="560" y1="120" x2="638" y2="100" stroke="#3d6b8e" stroke-width="1" marker-end="url(#arr-acc)"/>
+        <text x="608" y="104" font-size="8" fill="#8a8784" text-anchor="end">LLM calls</text>
+        <line x1="638" y1="115" x2="560" y2="140" stroke="#8a8784" stroke-width="1" marker-end="url(#arr)"/>
+        <text x="606" y="138" font-size="8" fill="#8a8784" text-anchor="end">completions</text>
 
-<h3>7.2 Reasoning Trace</h3>
-<p>Full trace preserved in state object and displayed optionally in UI. Each agent appends its rationale, confidence level, and references used. Enables post-hoc analysis and debugging.</p>
+        <!-- arrows: MARG → DDG -->
+        <line x1="560" y1="220" x2="638" y2="220" stroke="#3d6b8e" stroke-width="1" marker-end="url(#arr-acc)"/>
+        <text x="596" y="212" font-size="8" fill="#8a8784" text-anchor="middle">search queries</text>
+        <line x1="638" y1="235" x2="560" y2="235" stroke="#8a8784" stroke-width="1" marker-end="url(#arr)"/>
+        <text x="596" y="248" font-size="8" fill="#8a8784" text-anchor="middle">snippets + URLs</text>
 
-<h3>7.3 Decision Matrix and Conflict Resolution</h3>
-<p>Critic Agent scores draft sections across dimensions (accuracy, completeness, clarity, objectivity). Scores below threshold trigger targeted re-research or re-synthesis. Conflicts between agents resolved via predefined priority (Critic overrides Synthesizer, Planner overrides scope drift).</p>
+        <!-- arrows: MARG → FS -->
+        <line x1="560" y1="310" x2="638" y2="320" stroke="#8a8784" stroke-width="0.8" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+        <text x="590" y="308" font-size="8" fill="#8a8784" text-anchor="middle">checkpoint write</text>
+      </svg>
+    </div>
+  </div>
 
-<h2>8. Intelligence Platform</h2>
+  <h3 id="container-view">2.2 C4 Level 2 — Container View</h3>
+  <p>The container view decomposes MARG into its deployable runtime components. All components run in a single Docker Compose stack for local deployment, or a single Cloud Run container for the hosted tier. The LangGraph engine, FastAPI server, and Streamlit UI share the same process in the demo configuration.</p>
 
-<h3>8.1 Unified Intelligence Stack Architecture</h3>
-<p>LangGraph as central orchestrator managing state transitions. Agents implemented as nodes with typed inputs/outputs. Tools (search, future database queries) exposed via LangChain tool-calling interface. All components loosely coupled for independent testing and replacement.</p>
+  <div class="diag">
+    <div class="diag-caption">
+      <span>Figure 2 — C4 Level 2 Container Diagram · MARG runtime decomposition</span>
+      <div class="dc-tags"><span class="dc-tag hl">C4 L2</span><span class="dc-tag">Docker Compose</span><span class="dc-tag">Cloud Run</span></div>
+    </div>
+    <div class="svg-wrap">
+      <svg viewBox="0 0 780 440" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono',monospace">
+        <defs>
+          <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M1 1L9 5L1 9" fill="none" stroke="#8a8784" stroke-width="1.5" stroke-linecap="round"/>
+          </marker>
+          <marker id="arr2a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M1 1L9 5L1 9" fill="none" stroke="#3d6b8e" stroke-width="1.5" stroke-linecap="round"/>
+          </marker>
+        </defs>
 
-<h3>8.2 The RAG Component (Future Extension)</h3>
-<p>Hybrid retrieval strategy: web search for current events + optional user-provided document corpus ingested into local vector store. Query rewriting and hierarchical retrieval planned for improved precision.</p>
+        <!-- Outer docker boundary -->
+        <rect x="14" y="14" width="752" height="412" fill="none" stroke="#dddbd6" stroke-width="1" stroke-dasharray="6 3" rx="4"/>
+        <text x="26" y="30" font-size="8" fill="#8a8784" letter-spacing="1">[ DOCKER COMPOSE / CLOUD RUN — MARG APPLICATION ]</text>
 
-<h3>8.3 Observability Layer</h3>
-<p>Structured logging of agent invocations, token usage, latency, and decision scores. Exportable traces for analysis and iterative prompt improvement.</p>
+        <!-- FastAPI -->
+        <rect x="30" y="48" width="160" height="90" fill="#faf9f7" stroke="#3d6b8e" stroke-width="1" rx="2"/>
+        <text x="110" y="68" font-size="8.5" fill="#8a8784" text-anchor="middle">[container]</text>
+        <text x="110" y="86" font-size="11" font-weight="500" fill="#1a1916" text-anchor="middle">FastAPI Server</text>
+        <text x="110" y="104" font-size="8.5" fill="#4a4845" text-anchor="middle">POST /v1/research</text>
+        <text x="110" y="119" font-size="8.5" fill="#8a8784" text-anchor="middle">GET /v1/status/:id</text>
+        <text x="110" y="134" font-size="8" fill="#3a7d5a" text-anchor="middle">Python 3.11 · Uvicorn</text>
 
-<h2>9. The Model Lifecycle</h2>
-<ul>
-  <li><strong>Selection</strong>: Default to Llama 3.1 8B for speed/accuracy balance; support larger models for enhanced reasoning.</li>
-  <li><strong>Prompt Management</strong>: Version-controlled prompt templates stored in repository.</li>
-  <li><strong>Evaluation</strong>: Periodic offline evaluation against curated research questions using automated metrics (source coverage, hallucination rate) and human review.</li>
-  <li><strong>Continuous Improvement</strong>: Feedback loop from user ratings to refine Critic Agent scoring rubric and Planner outlining logic.</li>
-</ul>
+        <!-- Streamlit UI -->
+        <rect x="30" y="168" width="160" height="80" fill="#faf9f7" stroke="#dddbd6" stroke-width="1" rx="2"/>
+        <text x="110" y="188" font-size="8.5" fill="#8a8784" text-anchor="middle">[container]</text>
+        <text x="110" y="206" font-size="11" font-weight="500" fill="#1a1916" text-anchor="middle">Streamlit UI</text>
+        <text x="110" y="224" font-size="8.5" fill="#4a4845" text-anchor="middle">Real-time progress log</text>
+        <text x="110" y="239" font-size="8" fill="#3a7d5a" text-anchor="middle">port 8501</text>
 
-<h2>10. Infrastructure</h2>
+        <!-- LangGraph Engine -->
+        <rect x="240" y="48" width="200" height="110" fill="#eef3f7" stroke="#3d6b8e" stroke-width="1.5" rx="2"/>
+        <text x="340" y="68" font-size="8.5" fill="#3d6b8e" text-anchor="middle">[container · core]</text>
+        <text x="340" y="88" font-size="12" font-weight="500" fill="#1a1916" text-anchor="middle">LangGraph Engine</text>
+        <text x="340" y="107" font-size="8.5" fill="#4a4845" text-anchor="middle">Stateful graph executor</text>
+        <text x="340" y="124" font-size="8.5" fill="#4a4845" text-anchor="middle">AgentState · TypedDict</text>
+        <text x="340" y="141" font-size="8" fill="#3d6b8e" text-anchor="middle">LangGraph 0.2 · Python 3.11</text>
 
-<h3>10.1 Blueprint</h3>
-<ul>
-  <li>Local deployment: Docker Compose with Ollama container</li>
-  <li>Lightweight hosted: Hugging Face Spaces or Streamlit Community Cloud (single-container deployment)</li>
-  <li>Self-hosted scalable: Kubernetes with Ollama inference servers (future)</li>
-</ul>
+        <!-- 5 agents inside -->
+        <rect x="240" y="180" width="200" height="200" fill="#faf9f7" stroke="#dddbd6" stroke-width="1" stroke-dasharray="4 2" rx="2"/>
+        <text x="340" y="198" font-size="8" fill="#8a8784" text-anchor="middle" letter-spacing="1">[ AGENT NODES ]</text>
+        <rect x="254" y="208" width="80" height="34" fill="#eef3f7" stroke="#3d6b8e" stroke-width="0.8"/>
+        <text x="294" y="228" font-size="9" font-weight="500" fill="#3d6b8e" text-anchor="middle">Planner</text>
+        <rect x="346" y="208" width="80" height="34" fill="#eef3f7" stroke="#3d6b8e" stroke-width="0.8"/>
+        <text x="386" y="228" font-size="9" font-weight="500" fill="#3d6b8e" text-anchor="middle">Researcher</text>
+        <rect x="254" y="254" width="80" height="34" fill="#eef3f7" stroke="#3d6b8e" stroke-width="0.8"/>
+        <text x="294" y="274" font-size="9" font-weight="500" fill="#3d6b8e" text-anchor="middle">Synthesizer</text>
+        <rect x="346" y="254" width="80" height="34" fill="#f5f0e8" stroke="#7a6030" stroke-width="0.8"/>
+        <text x="386" y="274" font-size="9" font-weight="500" fill="#7a6030" text-anchor="middle">Critic</text>
+        <rect x="300" y="300" width="80" height="34" fill="#eef5f1" stroke="#3a7d5a" stroke-width="0.8"/>
+        <text x="340" y="320" font-size="9" font-weight="500" fill="#3a7d5a" text-anchor="middle">Formatter</text>
+        <text x="340" y="358" font-size="8" fill="#8a8784" text-anchor="middle">Conditional critique edge</text>
+        <text x="340" y="370" font-size="8" fill="#8a8784" text-anchor="middle">loops ≤ 3 times</text>
 
-<h3>10.2 Security</h3>
-<p>No external telemetry by default. All search queries anonymized through public APIs. Local model inference ensures no data exfiltration. Future: optional content filtering and PII redaction.</p>
+        <!-- Ollama -->
+        <rect x="500" y="48" width="130" height="80" fill="#faf9f7" stroke="#dddbd6" stroke-width="1" rx="2"/>
+        <text x="565" y="70" font-size="8.5" fill="#8a8784" text-anchor="middle">[ext. container]</text>
+        <text x="565" y="88" font-size="11" font-weight="500" fill="#1a1916" text-anchor="middle">Ollama</text>
+        <text x="565" y="106" font-size="8.5" fill="#4a4845" text-anchor="middle">localhost:11434</text>
+        <text x="565" y="120" font-size="8" fill="#3a7d5a" text-anchor="middle">Llama 3.1 8B / 70B</text>
 
-<h3>10.3 Governance and Compliance</h3>
-<p>Transparent prompt and tool usage logging. Configurable guardrails for sensitive topics. Clear disclaimers regarding factual accuracy and source reliability.</p>
+        <!-- Search Tool -->
+        <rect x="500" y="158" width="130" height="80" fill="#faf9f7" stroke="#dddbd6" stroke-width="1" rx="2"/>
+        <text x="565" y="178" font-size="8.5" fill="#8a8784" text-anchor="middle">[tool wrapper]</text>
+        <text x="565" y="196" font-size="11" font-weight="500" fill="#1a1916" text-anchor="middle">Search Tool</text>
+        <text x="565" y="214" font-size="8.5" fill="#4a4845" text-anchor="middle">DuckDuckGo wrapper</text>
+        <text x="565" y="228" font-size="8" fill="#3a7d5a" text-anchor="middle">LangChain tool interface</text>
 
-<h3>10.4 SRE</h3>
-<p>Container health checks, graceful degradation on search failures, retry logic with exponential backoff, rate limiting on tool calls to prevent abuse.</p>
+        <!-- Checkpoint Store -->
+        <rect x="500" y="268" width="130" height="70" fill="#faf9f7" stroke="#dddbd6" stroke-width="1" rx="2"/>
+        <text x="565" y="288" font-size="8.5" fill="#8a8784" text-anchor="middle">[local storage]</text>
+        <text x="565" y="306" font-size="11" font-weight="500" fill="#1a1916" text-anchor="middle">Checkpointer</text>
+        <text x="565" y="322" font-size="8.5" fill="#4a4845" text-anchor="middle">JSON · resumable</text>
 
-<h2>11. Impact & Outcomes</h2>
-<p>Expected outcomes include:</p>
-<ul>
-  <li>70-90% reduction in time required for initial research phases</li>
-  <li>Consistent report quality independent of user expertise</li>
-  <li>Improved decision-making velocity through accessible intelligence</li>
-  <li>Foundation for domain-specific adaptations (technical, market, legal research)</li>
-  <li>Contribution to open-source agentic AI patterns and best practices</li>
-</ul>
+        <!-- Observability -->
+        <rect x="500" y="358" width="130" height="54" fill="#faf9f7" stroke="#dddbd6" stroke-width="1" rx="2"/>
+        <text x="565" y="376" font-size="8.5" fill="#8a8784" text-anchor="middle">[sidecar]</text>
+        <text x="565" y="393" font-size="11" font-weight="500" fill="#1a1916" text-anchor="middle">Obs. Logger</text>
+        <text x="565" y="406" font-size="8" fill="#4a4845" text-anchor="middle">Structured JSON logs</text>
 
-<p>This design establishes a robust, extensible framework for autonomous research capabilities while maintaining transparency, privacy, and alignment with responsible AI development principles.</p>
+        <!-- Arrows -->
+        <line x1="190" y1="90" x2="238" y2="90" stroke="#3d6b8e" stroke-width="1" marker-end="url(#arr2a)"/>
+        <text x="214" y="83" font-size="8" fill="#8a8784" text-anchor="middle">invoke</text>
+        <line x1="190" y1="200" x2="230" y2="270" stroke="#8a8784" stroke-width="0.8" stroke-dasharray="4 2" marker-end="url(#arr2)"/>
+        <text x="196" y="244" font-size="8" fill="#8a8784" text-anchor="start">SSE stream</text>
+        <line x1="440" y1="90" x2="498" y2="80" stroke="#3d6b8e" stroke-width="1" marker-end="url(#arr2a)"/>
+        <text x="469" y="72" font-size="8" fill="#8a8784" text-anchor="middle">HTTP · chat/completions</text>
+        <line x1="440" y1="200" x2="498" y2="200" stroke="#3d6b8e" stroke-width="1" marker-end="url(#arr2a)"/>
+        <text x="469" y="192" font-size="8" fill="#8a8784" text-anchor="middle">search(query)</text>
+        <line x1="440" y1="320" x2="498" y2="310" stroke="#8a8784" stroke-width="0.8" stroke-dasharray="4 2" marker-end="url(#arr2)"/>
+        <text x="469" y="308" font-size="8" fill="#8a8784" text-anchor="middle">checkpoint</text>
+        <line x1="440" y1="350" x2="498" y2="375" stroke="#8a8784" stroke-width="0.8" stroke-dasharray="4 2" marker-end="url(#arr2)"/>
+        <text x="469" y="356" font-size="8" fill="#8a8784" text-anchor="middle">structured logs</text>
+      </svg>
+    </div>
+  </div>
 
+  <h3 id="graph-topology">2.3 LangGraph Graph Topology</h3>
+  <p>The LangGraph graph is the architectural centrepiece. It defines the agent execution order, conditional branching logic, and the critique loop upper-bound constraint. The graph is acyclic in the nominal path and contains exactly one conditional back-edge: the Critic→Researcher/Synthesizer re-entry that enables iterative refinement.</p>
+
+  <div class="diag">
+    <div class="diag-caption">
+      <span>Figure 3 — LangGraph state machine · node transitions and conditional critique loop</span>
+      <div class="dc-tags"><span class="dc-tag hl">LangGraph</span><span class="dc-tag">StateGraph</span><span class="dc-tag">conditional_edges</span></div>
+    </div>
+    <div class="svg-wrap">
+      <svg viewBox="0 0 780 460" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono',monospace">
+        <defs>
+          <marker id="garr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M1 1L9 5L1 9" fill="none" stroke="#4a4845" stroke-width="1.5" stroke-linecap="round"/>
+          </marker>
+          <marker id="garr-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M1 1L9 5L1 9" fill="none" stroke="#7a6030" stroke-width="1.5" stroke-linecap="round"/>
+          </marker>
+          <marker id="garr-pass" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M1 1L9 5L1 9" fill="none" stroke="#3a7d5a" stroke-width="1.5" stroke-linecap="round"/>
+          </marker>
+        </defs>
+
+        <!-- START -->
+        <circle cx="390" cy="30" r="14" fill="#1a1916"/>
+        <text x="390" y="30" font-size="8" fill="white" text-anchor="middle" dominant-baseline="middle">START</text>
+
+        <!-- Planner -->
+        <rect x="290" y="66" width="200" height="64" fill="#faf9f7" stroke="#3d6b8e" stroke-width="1.5" rx="2"/>
+        <text x="390" y="86" font-size="8" fill="#8a8784" text-anchor="middle">planner_node</text>
+        <text x="390" y="104" font-size="12" font-weight="500" fill="#1a1916" text-anchor="middle">Planner Agent</text>
+        <text x="390" y="122" font-size="8.5" fill="#4a4845" text-anchor="middle">Scope · outline · sub-queries</text>
+
+        <!-- Researcher -->
+        <rect x="290" y="162" width="200" height="64" fill="#faf9f7" stroke="#3d6b8e" stroke-width="1.5" rx="2"/>
+        <text x="390" y="182" font-size="8" fill="#8a8784" text-anchor="middle">researcher_node</text>
+        <text x="390" y="200" font-size="12" font-weight="500" fill="#1a1916" text-anchor="middle">Researcher Agent</text>
+        <text x="390" y="218" font-size="8.5" fill="#4a4845" text-anchor="middle">Search · extract · source map</text>
+
+        <!-- Synthesizer -->
+        <rect x="290" y="258" width="200" height="64" fill="#faf9f7" stroke="#3d6b8e" stroke-width="1.5" rx="2"/>
+        <text x="390" y="278" font-size="8" fill="#8a8784" text-anchor="middle">synthesizer_node</text>
+        <text x="390" y="296" font-size="12" font-weight="500" fill="#1a1916" text-anchor="middle">Synthesizer Agent</text>
+        <text x="390" y="314" font-size="8.5" fill="#4a4845" text-anchor="middle">Draft sections · inline citations</text>
+
+        <!-- Critic -->
+        <rect x="290" y="354" width="200" height="64" fill="#faf9f7" stroke="#7a6030" stroke-width="1.5" rx="2"/>
+        <text x="390" y="374" font-size="8" fill="#8a8784" text-anchor="middle">critic_node · conditional</text>
+        <text x="390" y="392" font-size="12" font-weight="500" fill="#1a1916" text-anchor="middle">Critic Agent</text>
+        <text x="390" y="410" font-size="8.5" fill="#4a4845" text-anchor="middle">Score · gate · route decision</text>
+
+        <!-- Formatter — below with offset -->
+        <rect x="510" y="354" width="180" height="64" fill="#faf9f7" stroke="#3a7d5a" stroke-width="1.5" rx="2"/>
+        <text x="600" y="374" font-size="8" fill="#8a8784" text-anchor="middle">formatter_node</text>
+        <text x="600" y="392" font-size="12" font-weight="500" fill="#1a1916" text-anchor="middle">Formatter Agent</text>
+        <text x="600" y="410" font-size="8.5" fill="#4a4845" text-anchor="middle">Structure · TOC · refs</text>
+
+        <!-- END -->
+        <circle cx="600" cy="448" r="14" fill="none" stroke="#1a1916" stroke-width="2"/>
+        <circle cx="600" cy="448" r="9" fill="#1a1916"/>
+
+        <!-- Flow arrows: straight line -->
+        <line x1="390" y1="44" x2="390" y2="64" stroke="#4a4845" stroke-width="1" marker-end="url(#garr)"/>
+        <line x1="390" y1="130" x2="390" y2="160" stroke="#4a4845" stroke-width="1" marker-end="url(#garr)"/>
+        <line x1="390" y1="226" x2="390" y2="256" stroke="#4a4845" stroke-width="1" marker-end="url(#garr)"/>
+        <line x1="390" y1="322" x2="390" y2="352" stroke="#4a4845" stroke-width="1" marker-end="url(#garr)"/>
+
+        <!-- Critic → Formatter (pass) -->
+        <line x1="490" y1="386" x2="508" y2="386" stroke="#3a7d5a" stroke-width="1" marker-end="url(#garr-pass)"/>
+        <text x="499" y="380" font-size="8" fill="#3a7d5a" text-anchor="middle">PASS</text>
+        <text x="499" y="393" font-size="8" fill="#3a7d5a" text-anchor="middle">score ≥ θ</text>
+
+        <!-- Formatter → END -->
+        <line x1="600" y1="418" x2="600" y2="432" stroke="#4a4845" stroke-width="1" marker-end="url(#garr)"/>
+
+        <!-- Critic → re-research back-edge -->
+        <path d="M290 395 Q160 395 160 225 Q160 130 290 130" fill="none" stroke="#7a6030" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#garr-warn)"/>
+        <text x="108" y="276" font-size="8" fill="#7a6030" text-anchor="middle">FAIL</text>
+        <text x="108" y="288" font-size="8" fill="#7a6030" text-anchor="middle">retrieval</text>
+        <text x="108" y="300" font-size="8" fill="#7a6030" text-anchor="middle">gap ·</text>
+        <text x="108" y="312" font-size="8" fill="#7a6030" text-anchor="middle">re-search</text>
+        <text x="108" y="324" font-size="8" fill="#7a6030" text-anchor="middle">(≤ 3×)</text>
+
+        <!-- Critic → re-synthesis back-edge -->
+        <path d="M490 370 Q660 370 660 290 Q660 258 492 258" fill="none" stroke="#7a6030" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#garr-warn)"/>
+        <text x="700" y="310" font-size="8" fill="#7a6030" text-anchor="start">FAIL · low</text>
+        <text x="700" y="322" font-size="8" fill="#7a6030" text-anchor="start">quality ·</text>
+        <text x="700" y="334" font-size="8" fill="#7a6030" text-anchor="start">re-synth</text>
+
+        <!-- legend -->
+        <line x1="44" y1="30" x2="70" y2="30" stroke="#4a4845" stroke-width="1" marker-end="url(#garr)"/>
+        <text x="76" y="34" font-size="8" fill="#8a8784">nominal path</text>
+        <line x1="44" y1="46" x2="70" y2="46" stroke="#7a6030" stroke-width="1" stroke-dasharray="4 2" marker-end="url(#garr-warn)"/>
+        <text x="76" y="50" font-size="8" fill="#8a8784">critique loop (conditional)</text>
+        <line x1="44" y1="62" x2="70" y2="62" stroke="#3a7d5a" stroke-width="1" marker-end="url(#garr-pass)"/>
+        <text x="76" y="66" font-size="8" fill="#8a8784">pass → advance</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3 id="tech-stack">2.4 Technology Stack</h3>
+
+  <div class="layers">
+    <div class="layer-row">
+      <div class="layer-lbl">interface</div>
+      <div class="layer-content">
+        <span class="lchip hl">POST /v1/research</span>
+        <span class="lchip free">GET /v1/status/:id · SSE</span>
+        <span class="lchip free">Streamlit UI · port 8501</span>
+        <span class="lchip free">Markdown export</span>
+        <span class="lchip free">PDF export · weasyprint</span>
+      </div>
+    </div>
+    <div class="layer-row">
+      <div class="layer-lbl">orchestr.</div>
+      <div class="layer-content">
+        <span class="lchip hl">LangGraph 0.2 · StateGraph</span>
+        <span class="lchip free">LangChain 0.3 · tool interface</span>
+        <span class="lchip free">FastAPI · Uvicorn · Python 3.11</span>
+        <span class="lchip free">asyncio · concurrent agents</span>
+      </div>
+    </div>
+    <div class="layer-row">
+      <div class="layer-lbl">intellig.</div>
+      <div class="layer-content">
+        <span class="lchip free">Llama 3.1 8B · Ollama · default</span>
+        <span class="lchip free">Llama 3.1 70B · enhanced</span>
+        <span class="lchip free">Mistral Large · alternate</span>
+        <span class="lchip hl">Critic rubric · structured output</span>
+        <span class="lchip free">DuckDuckGo search · no key</span>
+      </div>
+    </div>
+    <div class="layer-row">
+      <div class="layer-lbl">data</div>
+      <div class="layer-content">
+        <span class="lchip free">JSON checkpoints · local FS</span>
+        <span class="lchip free">SQLite · query log (demo)</span>
+        <span class="lchip free">Chroma · optional doc corpus</span>
+        <span class="lchip warn">FAISS · scale extension</span>
+      </div>
+    </div>
+    <div class="layer-row">
+      <div class="layer-lbl">deploy</div>
+      <div class="layer-content">
+        <span class="lchip free">Docker Compose · local</span>
+        <span class="lchip free">Cloud Run · single container</span>
+        <span class="lchip free">Ollama container · sidecar</span>
+        <span class="lchip warn">GKE · scale path</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout pass">
+    <span class="callout-label">Free-tier viability</span>
+    <p>All LLM inference runs locally via Ollama — zero API cost at any scale. DuckDuckGo search wrapper requires no API key. Cloud Run free tier covers 2M requests/month and 400K GB-seconds compute. The demo tier operates entirely within these limits. The production graduation path to GKE with Vertex AI endpoints is documented in §6.</p>
+  </div>
+</section>
+
+<!-- §3 AGENTS -->
+<section class="section" id="agents">
+  <h2><span class="sec-n">§3</span> Agent Catalogue &amp; Specifications</h2>
+
+  <p>Each agent is a deterministic function: <code>(AgentState) → AgentState</code>. No agent holds mutable external state between invocations. Each agent reads a defined subset of the state, calls its tools, and returns a partial state update. LangGraph merges updates and routes to the next node per the graph edge definitions.</p>
+
+  <div class="agent-grid">
+    <div class="agent-card">
+      <div class="agent-name">agent-01 · planner_node</div>
+      <div class="agent-role">Planner Agent</div>
+      <div class="agent-desc">Receives the raw research query and optional depth/focus parameters. Produces a scoped research outline: N sections with titles, weights, and per-section sub-queries. Prevents scope drift by explicitly bounding the research surface before any retrieval begins.</div>
+      <div class="agent-io">
+        <span class="key">reads:</span> query, depth, focus_areas<br>
+        <span class="key">writes:</span> outline[{title, weight, sub_queries[]}]<br>
+        <span class="key">model:</span> Llama 3.1 8B · structured JSON output<br>
+        <span class="key">failure:</span> decomposition failure → default single-section outline
+      </div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-name">agent-02 · researcher_node</div>
+      <div class="agent-role">Researcher Agent</div>
+      <div class="agent-desc">Executes the Planner's sub-queries against DuckDuckGo. Extracts snippet text, source URLs, and estimated recency. Scores each result for topical relevance against the sub-query. Builds a structured source map keyed by outline section for downstream attribution. May be re-invoked by the Critic if retrieval gaps are identified.</div>
+      <div class="agent-io">
+        <span class="key">reads:</span> outline, iteration_count<br>
+        <span class="key">writes:</span> source_map[{section, url, snippet, relevance}]<br>
+        <span class="key">tool:</span> DuckDuckGoSearchTool · LangChain interface<br>
+        <span class="key">failure:</span> all searches empty → flag in state; Critic will escalate
+      </div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-name">agent-03 · synthesizer_node</div>
+      <div class="agent-role">Synthesizer Agent</div>
+      <div class="agent-desc">Drafts each report section from the outline and the corresponding source map entries. Injects inline citation markers <code>[N]</code> at claim level. Constrained to the outline structure — cannot introduce sections not defined by the Planner. Returns a draft_sections list and a full citation index.</div>
+      <div class="agent-io">
+        <span class="key">reads:</span> outline, source_map, critic_feedback (if re-invoked)<br>
+        <span class="key">writes:</span> draft_sections[{title, body, citations[]}], citation_index<br>
+        <span class="key">model:</span> Llama 3.1 70B · higher quality tier<br>
+        <span class="key">constraint:</span> must not introduce outline sections; must cite every factual claim
+      </div>
+    </div>
+    <div class="agent-card" style="border-left:3px solid var(--warn);">
+      <div class="agent-name">agent-04 · critic_node · <span style="color:var(--warn)">GATE</span></div>
+      <div class="agent-role">Critic Agent</div>
+      <div class="agent-desc">The quality gate. Scores the draft report across four dimensions using a structured rubric. Scores below per-dimension thresholds produce a structured failure report that identifies the failure type (retrieval gap vs. synthesis quality), the affected sections, and the recommended remediation. The conditional edge routing logic is derived directly from this failure report — not from the raw scores.</div>
+      <div class="agent-io">
+        <span class="key">reads:</span> draft_sections, source_map, outline, iteration_count<br>
+        <span class="key">writes:</span> quality_scores{accuracy, coverage, clarity, objectivity}, critic_feedback<br>
+        <span class="key">routes:</span> PASS → formatter | FAIL-RETRIEVAL → researcher | FAIL-QUALITY → synthesizer | MAX-ITER → formatter<br>
+        <span class="key">max loop:</span> iteration_count ≤ 3 (hard cap; escalates to formatter regardless)
+      </div>
+    </div>
+  </div>
+
+  <div class="adr" style="margin-top:1rem;">
+    <div class="adr-header">
+      <span class="adr-id">AGENT-05</span>
+      <span class="adr-status">formatter_node</span>
+    </div>
+    <div class="adr-title">Formatter Agent</div>
+    <div class="adr-body">
+      <div class="adr-section">
+        <span class="adr-section-label">Responsibility</span>
+        <p>Assembles the final report from approved draft sections. Generates: executive summary (from section summaries), table of contents (from outline), numbered reference list (from citation index), and disclosure header. Applies consistent Markdown or PDF formatting. Does not make content decisions — it is a pure structural transformation.</p>
+      </div>
+      <div class="adr-section">
+        <span class="adr-section-label">State contract</span>
+        <p>reads: draft_sections, citation_index, quality_scores, outline<br>
+        writes: final_report{markdown, metadata{sources[], scores, iteration_count, trace}}</p>
+      </div>
+      <div class="adr-section">
+        <span class="adr-section-label">Disclosure header</span>
+        <p>Every report produced by MARG carries a structured disclosure header identifying the content as AI-generated and listing the source URLs used. This is a hard output constraint enforced by the Formatter Agent prompt, not an operator option.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3 id="critic">3.5 Critic Scoring Rubric</h3>
+
+  <p>The Critic Agent evaluates drafts against four dimensions. Each dimension has an independent threshold. A draft can pass on three dimensions and fail on one — the failure type, not the aggregate score, determines the routing decision.</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Dimension</th><th>What is evaluated</th><th>Pass threshold</th><th>Failure route</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Factual accuracy</td>
+          <td>Claims that lack a cited source; claims that contradict source snippets; implausible statistics</td>
+          <td>≥ 0.80</td>
+          <td>FAIL-RETRIEVAL → Researcher re-invoked with targeted sub-queries for the failing sections</td>
+        </tr>
+        <tr>
+          <td>Coverage completeness</td>
+          <td>Outline sections with insufficient source depth; sections shorter than weight-adjusted length</td>
+          <td>≥ 0.75</td>
+          <td>FAIL-RETRIEVAL → Researcher re-invoked for the thin sections only (not full re-research)</td>
+        </tr>
+        <tr>
+          <td>Analytical clarity</td>
+          <td>Incoherent paragraph structure; undefined abbreviations; contradictory statements within section</td>
+          <td>≥ 0.70</td>
+          <td>FAIL-QUALITY → Synthesizer re-invoked with specific section feedback from critic_feedback</td>
+        </tr>
+        <tr>
+          <td>Objectivity</td>
+          <td>Unsubstantiated opinions; promotional language; one-sided characterisation of contested topics</td>
+          <td>≥ 0.75</td>
+          <td>FAIL-QUALITY → Synthesizer re-invoked with objectivity-specific rewrite instructions</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout warn">
+    <span class="callout-label">Max iteration guard</span>
+    <p>If <code>iteration_count</code> reaches 3 and the Critic still reports failures, the graph routes to the Formatter unconditionally. The final report includes the quality scores and a flag indicating the report did not pass all thresholds. The operator receives the best available output, not a blank error. This prevents infinite loops while preserving partial value delivery.</p>
+  </div>
+</section>
+
+<!-- §4 STATE & FLOW -->
+<section class="section" id="state">
+  <h2><span class="sec-n">§4</span> State Schema &amp; Data Flow</h2>
+
+  <h3>4.1 AgentState Schema</h3>
+
+  <p>All inter-agent communication occurs exclusively through the <code>AgentState</code> TypedDict. No agent passes data to another through any channel other than the state object. This makes the entire system state inspectable, serialisable, and resumable from any checkpoint.</p>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span>state.py · AgentState · TypedDict · LangGraph shared state object</span>
+      <span>all fields immutable per agent invocation · partial updates via Annotated[list, add]</span>
+    </div>
+    <div class="code-body">
+<span class="c-kw">from</span> <span class="c-var">typing</span> <span class="c-kw">import</span> <span class="c-cls">TypedDict</span>, <span class="c-cls">Annotated</span>, <span class="c-cls">Optional</span>, <span class="c-cls">List</span>
+<span class="c-kw">from</span> <span class="c-var">langgraph.graph.message</span> <span class="c-kw">import</span> <span class="c-fn">add_messages</span>
+
+<span class="c-kw">class</span> <span class="c-cls">OutlineSection</span>(<span class="c-cls">TypedDict</span>):
+    <span class="c-var">title</span>:       <span class="c-cls">str</span>
+    <span class="c-var">weight</span>:      <span class="c-cls">float</span>          <span class="c-cmt"># relative importance 0.0–1.0; used by Critic</span>
+    <span class="c-var">sub_queries</span>: <span class="c-cls">List</span>[<span class="c-cls">str</span>]   <span class="c-cmt"># atomic search queries generated by Planner</span>
+
+<span class="c-kw">class</span> <span class="c-cls">SourceEntry</span>(<span class="c-cls">TypedDict</span>):
+    <span class="c-var">section</span>:    <span class="c-cls">str</span>
+    <span class="c-var">url</span>:        <span class="c-cls">str</span>
+    <span class="c-var">snippet</span>:    <span class="c-cls">str</span>
+    <span class="c-var">relevance</span>:  <span class="c-cls">float</span>          <span class="c-cmt"># scored by Researcher; used by Critic coverage check</span>
+
+<span class="c-kw">class</span> <span class="c-cls">QualityScores</span>(<span class="c-cls">TypedDict</span>):
+    <span class="c-var">accuracy</span>:    <span class="c-cls">float</span>
+    <span class="c-var">coverage</span>:    <span class="c-cls">float</span>
+    <span class="c-var">clarity</span>:     <span class="c-cls">float</span>
+    <span class="c-var">objectivity</span>: <span class="c-cls">float</span>
+
+<span class="c-kw">class</span> <span class="c-cls">AgentState</span>(<span class="c-cls">TypedDict</span>):
+    <span class="c-cmt"># ── inputs ──────────────────────────────────────────────────────</span>
+    <span class="c-var">query</span>:          <span class="c-cls">str</span>
+    <span class="c-var">depth</span>:          <span class="c-cls">str</span>                           <span class="c-cmt"># "overview" | "standard" | "deep"</span>
+    <span class="c-var">focus_areas</span>:    <span class="c-cls">List</span>[<span class="c-cls">str</span>]                    <span class="c-cmt"># optional user-specified sub-topics</span>
+
+    <span class="c-cmt"># ── planner output ──────────────────────────────────────────────</span>
+    <span class="c-var">outline</span>:        <span class="c-cls">List</span>[<span class="c-cls">OutlineSection</span>]
+
+    <span class="c-cmt"># ── researcher output ───────────────────────────────────────────</span>
+    <span class="c-var">source_map</span>:     <span class="c-cls">Annotated</span>[<span class="c-cls">List</span>[<span class="c-cls">SourceEntry</span>], <span class="c-fn">add_messages</span>]
+    <span class="c-cmt"># Annotated[list, add_messages] → new entries are appended on re-invocation</span>
+    <span class="c-cmt"># this means re-search accumulates sources rather than replacing them</span>
+
+    <span class="c-cmt"># ── synthesizer output ──────────────────────────────────────────</span>
+    <span class="c-var">draft_sections</span>: <span class="c-cls">List</span>[<span class="c-cls">dict</span>]                  <span class="c-cmt"># {title, body, citations[]}</span>
+    <span class="c-var">citation_index</span>: <span class="c-cls">dict</span>                         <span class="c-cmt"># {ref_num → SourceEntry}</span>
+
+    <span class="c-cmt"># ── critic output ───────────────────────────────────────────────</span>
+    <span class="c-var">quality_scores</span>: <span class="c-cls">Optional</span>[<span class="c-cls">QualityScores</span>]
+    <span class="c-var">critic_feedback</span>: <span class="c-cls">Optional</span>[<span class="c-cls">str</span>]               <span class="c-cmt"># targeted rewrite instructions</span>
+    <span class="c-var">iteration_count</span>: <span class="c-cls">int</span>                          <span class="c-cmt"># loop guard — max 3</span>
+
+    <span class="c-cmt"># ── formatter output ────────────────────────────────────────────</span>
+    <span class="c-var">final_report</span>:   <span class="c-cls">Optional</span>[<span class="c-cls">str</span>]                <span class="c-cmt"># Markdown string</span>
+
+    <span class="c-cmt"># ── observability ───────────────────────────────────────────────</span>
+    <span class="c-var">trace</span>:          <span class="c-cls">Annotated</span>[<span class="c-cls">List</span>[<span class="c-cls">str</span>], <span class="c-fn">add_messages</span>]
+    <span class="c-cmt"># each agent appends: f"{agent_name}:{rationale}:{confidence}" to trace</span>
+    </div>
+  </div>
+
+  <h3 id="data-flow">4.2 Data Flow — End-to-End</h3>
+
+  <div style="margin:1.5rem 0;padding:1rem;background:var(--code-bg);border:1px solid var(--rule2);font-family:var(--mono);font-size:0.65rem;line-height:2">
+    <div style="color:var(--ink3);margin-bottom:0.5rem"># end-to-end data flow · nominal path (no critique loop)</div>
+    <div><span style="color:#569cd6">user query</span> ──→ <span style="color:#dcdcaa">POST /v1/research</span> (FastAPI · Cloud Run)</div>
+    <div style="padding-left:1.5rem">├─ <span style="color:#4ec9b0">PlannerAgent</span>    →  outline[N sections, sub_queries[]]</div>
+    <div style="padding-left:1.5rem">├─ <span style="color:#4ec9b0">ResearcherAgent</span> →  source_map[{url, snippet, relevance}]  <span style="color:#6a9955"># N × DuckDuckGo calls</span></div>
+    <div style="padding-left:1.5rem">├─ <span style="color:#4ec9b0">SynthesizerAgent</span>→  draft_sections[{body, citations[]}]</div>
+    <div style="padding-left:1.5rem">├─ <span style="color:#4ec9b0">CriticAgent</span>     →  quality_scores + routing_decision</div>
+    <div style="padding-left:1.5rem">│    <span style="color:#6a9955"># if PASS: → FormatterAgent</span></div>
+    <div style="padding-left:1.5rem">│    <span style="color:#ce9178"># if FAIL-RETRIEVAL: → ResearcherAgent (targeted re-search)</span></div>
+    <div style="padding-left:1.5rem">│    <span style="color:#ce9178"># if FAIL-QUALITY:   → SynthesizerAgent (targeted rewrite)</span></div>
+    <div style="padding-left:1.5rem">│    <span style="color:#7a6030"># if iter_count ≥ 3:  → FormatterAgent unconditionally</span></div>
+    <div style="padding-left:1.5rem">└─ <span style="color:#4ec9b0">FormatterAgent</span>  →  final_report{markdown, toc, refs, disclosure, scores}</div>
+    <div style="color:#ce9178;margin-top:0.5rem">→ return { report_md, source_list, quality_scores, iteration_count, trace }</div>
+  </div>
+
+  <h3 id="conflict">4.3 Conflict Resolution — Priority Ordering</h3>
+
+  <p>When agent outputs conflict — the Synthesizer produces a claim not supported by any source, or the Planner's outline is contradicted by Critic-identified scope drift — the following priority ordering applies. This is encoded in the graph edge definitions, not in prompt instructions.</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Priority</th><th>Agent</th><th>Scope of authority</th><th>Override mechanism</th></tr></thead>
+      <tbody>
+        <tr><td>P1 — highest</td><td>Critic Agent</td><td>Quality threshold enforcement; routing decisions</td><td>Conditional edge; Critic output is the routing function input — no other agent can override it</td></tr>
+        <tr><td>P2</td><td>Planner Agent</td><td>Research scope; outline structure</td><td>Synthesizer is structurally constrained to the outline; cannot introduce sections the Planner did not define</td></tr>
+        <tr><td>P3</td><td>Researcher Agent</td><td>Source selection; relevance scoring</td><td>Synthesizer must cite from source_map; cannot invent sources not in the map</td></tr>
+        <tr><td>P4 — lowest</td><td>Synthesizer &amp; Formatter</td><td>Prose generation; structural formatting</td><td>Overridden by Critic (quality) and Planner (scope) constraints; Formatter is pure transformation</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- §5 IMPLEMENTATION -->
+<section class="section" id="implementation">
+  <h2><span class="sec-n">§5</span> Implementation</h2>
+
+  <h3>5.1 LangGraph Graph Definition</h3>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span>graph.py · LangGraph StateGraph · MARG workflow definition</span>
+      <span>LangGraph 0.2 · Python 3.11</span>
+    </div>
+    <div class="code-body">
+<span class="c-kw">from</span> <span class="c-var">langgraph.graph</span> <span class="c-kw">import</span> <span class="c-cls">StateGraph</span>, <span class="c-cls">END</span>
+<span class="c-kw">from</span> <span class="c-var">state</span> <span class="c-kw">import</span> <span class="c-cls">AgentState</span>
+<span class="c-kw">from</span> <span class="c-var">agents</span> <span class="c-kw">import</span> <span class="c-var">planner</span>, <span class="c-var">researcher</span>, <span class="c-var">synthesizer</span>, <span class="c-var">critic</span>, <span class="c-var">formatter</span>
+
+<span class="c-var">workflow</span> = <span class="c-cls">StateGraph</span>(<span class="c-cls">AgentState</span>)
+
+<span class="c-cmt"># ── register nodes ──────────────────────────────────────────────────────</span>
+<span class="c-var">workflow</span>.<span class="c-fn">add_node</span>(<span class="c-str">"planner"</span>,     <span class="c-var">planner</span>.<span class="c-fn">run</span>)
+<span class="c-var">workflow</span>.<span class="c-fn">add_node</span>(<span class="c-str">"researcher"</span>,  <span class="c-var">researcher</span>.<span class="c-fn">run</span>)
+<span class="c-var">workflow</span>.<span class="c-fn">add_node</span>(<span class="c-str">"synthesizer"</span>, <span class="c-var">synthesizer</span>.<span class="c-fn">run</span>)
+<span class="c-var">workflow</span>.<span class="c-fn">add_node</span>(<span class="c-str">"critic"</span>,      <span class="c-var">critic</span>.<span class="c-fn">run</span>)
+<span class="c-var">workflow</span>.<span class="c-fn">add_node</span>(<span class="c-str">"formatter"</span>,   <span class="c-var">formatter</span>.<span class="c-fn">run</span>)
+
+<span class="c-cmt"># ── nominal edges ───────────────────────────────────────────────────────</span>
+<span class="c-var">workflow</span>.<span class="c-fn">set_entry_point</span>(<span class="c-str">"planner"</span>)
+<span class="c-var">workflow</span>.<span class="c-fn">add_edge</span>(<span class="c-str">"planner"</span>,    <span class="c-str">"researcher"</span>)
+<span class="c-var">workflow</span>.<span class="c-fn">add_edge</span>(<span class="c-str">"researcher"</span>, <span class="c-str">"synthesizer"</span>)
+<span class="c-var">workflow</span>.<span class="c-fn">add_edge</span>(<span class="c-str">"synthesizer"</span>,<span class="c-str">"critic"</span>)
+<span class="c-var">workflow</span>.<span class="c-fn">add_edge</span>(<span class="c-str">"formatter"</span>,  <span class="c-cls">END</span>)
+
+<span class="c-cmt"># ── conditional edge: critic routing function ────────────────────────────</span>
+<span class="c-kw">def</span> <span class="c-fn">route_after_critic</span>(<span class="c-var">state</span>: <span class="c-cls">AgentState</span>) -> <span class="c-cls">str</span>:
+    <span class="c-kw">if</span> <span class="c-var">state</span>[<span class="c-str">"iteration_count"</span>] &gt;= <span class="c-num">3</span>:
+        <span class="c-kw">return</span> <span class="c-str">"formatter"</span>  <span class="c-cmt"># hard cap: deliver best available</span>
+    <span class="c-var">fb</span> = <span class="c-var">state</span>.<span class="c-fn">get</span>(<span class="c-str">"critic_feedback"</span>)
+    <span class="c-kw">if</span> <span class="c-var">fb</span> <span class="c-kw">is None</span>:
+        <span class="c-kw">return</span> <span class="c-str">"formatter"</span>  <span class="c-cmt"># no failure → pass</span>
+    <span class="c-kw">if</span> <span class="c-var">fb</span>[<span class="c-str">"type"</span>] == <span class="c-str">"RETRIEVAL_GAP"</span>:
+        <span class="c-kw">return</span> <span class="c-str">"researcher"</span>   <span class="c-cmt"># re-search with targeted sub-queries</span>
+    <span class="c-kw">if</span> <span class="c-var">fb</span>[<span class="c-str">"type"</span>] == <span class="c-str">"QUALITY_FAIL"</span>:
+        <span class="c-kw">return</span> <span class="c-str">"synthesizer"</span>  <span class="c-cmt"># rewrite with critic feedback</span>
+    <span class="c-kw">return</span> <span class="c-str">"formatter"</span>
+
+<span class="c-var">workflow</span>.<span class="c-fn">add_conditional_edges</span>(
+    <span class="c-str">"critic"</span>,
+    <span class="c-fn">route_after_critic</span>,
+    {<span class="c-str">"formatter"</span>: <span class="c-str">"formatter"</span>, <span class="c-str">"researcher"</span>: <span class="c-str">"researcher"</span>, <span class="c-str">"synthesizer"</span>: <span class="c-str">"synthesizer"</span>}
+)
+
+<span class="c-cmt"># ── compile with checkpointer for resumability ───────────────────────────</span>
+<span class="c-kw">from</span> <span class="c-var">langgraph.checkpoint.sqlite</span> <span class="c-kw">import</span> <span class="c-cls">SqliteSaver</span>
+<span class="c-var">checkpointer</span> = <span class="c-cls">SqliteSaver</span>.<span class="c-fn">from_conn_string</span>(<span class="c-str">":memory:"</span>)
+<span class="c-var">app</span> = <span class="c-var">workflow</span>.<span class="c-fn">compile</span>(<span class="c-var">checkpointer</span>=<span class="c-var">checkpointer</span>)
+    </div>
+  </div>
+
+  <h3 id="search-tool">5.2 Search Tool — Source Extraction</h3>
+
+  <p>The Researcher Agent's sole external interaction is through the DuckDuckGo LangChain tool wrapper. The wrapper returns structured results — title, URL, snippet — without authentication or query logging. Relevance scoring is performed locally by a lightweight cosine similarity pass against the sub-query embedding before results are written to <code>source_map</code>.</p>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span>tools/search.py · DuckDuckGo wrapper · structured source extraction</span>
+      <span>no API key · no query egress logging</span>
+    </div>
+    <div class="code-body">
+<span class="c-kw">from</span> <span class="c-var">langchain_community.tools</span> <span class="c-kw">import</span> <span class="c-cls">DuckDuckGoSearchRun</span>
+<span class="c-kw">from</span> <span class="c-var">langchain_community.utilities</span> <span class="c-kw">import</span> <span class="c-cls">DuckDuckGoSearchAPIWrapper</span>
+<span class="c-kw">from</span> <span class="c-var">sentence_transformers</span> <span class="c-kw">import</span> <span class="c-cls">SentenceTransformer</span>
+<span class="c-kw">import</span> <span class="c-var">numpy</span> <span class="c-kw">as</span> <span class="c-var">np</span>
+
+<span class="c-var">_embed</span> = <span class="c-cls">SentenceTransformer</span>(<span class="c-str">"all-MiniLM-L6-v2"</span>)  <span class="c-cmt"># local · no API cost</span>
+
+<span class="c-kw">def</span> <span class="c-fn">search_and_score</span>(<span class="c-var">sub_query</span>: <span class="c-cls">str</span>, <span class="c-var">section</span>: <span class="c-cls">str</span>, <span class="c-var">top_k</span>: <span class="c-cls">int</span> = <span class="c-num">5</span>) -> <span class="c-cls">list</span>[<span class="c-cls">dict</span>]:
+    <span class="c-var">wrapper</span>  = <span class="c-cls">DuckDuckGoSearchAPIWrapper</span>(max_results=<span class="c-num">10</span>)
+    <span class="c-var">raw</span>      = <span class="c-var">wrapper</span>.<span class="c-fn">results</span>(<span class="c-var">sub_query</span>, <span class="c-var">max_results</span>=<span class="c-num">10</span>)
+
+    <span class="c-var">q_emb</span>    = <span class="c-var">_embed</span>.<span class="c-fn">encode</span>(<span class="c-var">sub_query</span>)
+    <span class="c-var">results</span>  = []
+    <span class="c-kw">for</span> <span class="c-var">r</span> <span class="c-kw">in</span> <span class="c-var">raw</span>:
+        <span class="c-var">s_emb</span>     = <span class="c-var">_embed</span>.<span class="c-fn">encode</span>(<span class="c-var">r</span>[<span class="c-str">"snippet"</span>])
+        <span class="c-var">relevance</span> = <span class="c-cls">float</span>(<span class="c-var">np</span>.<span class="c-fn">dot</span>(<span class="c-var">q_emb</span>, <span class="c-var">s_emb</span>) / (
+                        <span class="c-var">np</span>.<span class="c-fn">linalg</span>.<span class="c-fn">norm</span>(<span class="c-var">q_emb</span>) * <span class="c-var">np</span>.<span class="c-fn">linalg</span>.<span class="c-fn">norm</span>(<span class="c-var">s_emb</span>) + <span class="c-num">1e-9</span>))
+        <span class="c-var">results</span>.<span class="c-fn">append</span>({
+            <span class="c-str">"section"</span>:   <span class="c-var">section</span>,
+            <span class="c-str">"url"</span>:       <span class="c-var">r</span>[<span class="c-str">"link"</span>],
+            <span class="c-str">"snippet"</span>:   <span class="c-var">r</span>[<span class="c-str">"snippet"</span>],
+            <span class="c-str">"relevance"</span>: <span class="c-var">relevance</span>
+        })
+
+    <span class="c-kw">return</span> <span class="c-fn">sorted</span>(<span class="c-var">results</span>, key=<span class="c-kw">lambda</span> <span class="c-var">x</span>: <span class="c-var">x</span>[<span class="c-str">"relevance"</span>], reverse=<span class="c-kw">True</span>)[:<span class="c-var">top_k</span>]
+    </div>
+  </div>
+
+  <h3 id="api">5.3 API Contract</h3>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span>main.py · FastAPI · POST /v1/research</span>
+      <span>Cloud Run · single container · Python 3.11</span>
+    </div>
+    <div class="code-body">
+<span class="c-dec">@app.post</span>(<span class="c-str">"/v1/research"</span>)
+<span class="c-kw">async def</span> <span class="c-fn">run_research</span>(<span class="c-var">req</span>: <span class="c-cls">ResearchRequest</span>) -> <span class="c-cls">ResearchResponse</span>:
+    <span class="c-var">session_id</span> = <span class="c-fn">generate_session_id</span>()
+    <span class="c-var">initial_state</span>: <span class="c-cls">AgentState</span> = {
+        <span class="c-str">"query"</span>:          <span class="c-var">req</span>.<span class="c-var">query</span>,
+        <span class="c-str">"depth"</span>:          <span class="c-var">req</span>.<span class="c-var">depth</span>,
+        <span class="c-str">"focus_areas"</span>:    <span class="c-var">req</span>.<span class="c-var">focus_areas</span>,
+        <span class="c-str">"iteration_count"</span>: <span class="c-num">0</span>,
+        <span class="c-str">"source_map"</span>:     [],
+        <span class="c-str">"trace"</span>:          [],
+    }
+    <span class="c-cmt"># stream state updates via SSE for real-time UI progress</span>
+    <span class="c-var">config</span> = {<span class="c-str">"configurable"</span>: {<span class="c-str">"thread_id"</span>: <span class="c-var">session_id</span>}}
+    <span class="c-var">final_state</span> = <span class="c-kw">await</span> <span class="c-var">app</span>.<span class="c-fn">ainvoke</span>(<span class="c-var">initial_state</span>, <span class="c-var">config</span>)
+
+    <span class="c-kw">return</span> <span class="c-cls">ResearchResponse</span>(
+        <span class="c-var">session_id</span>    = <span class="c-var">session_id</span>,
+        <span class="c-var">report_md</span>     = <span class="c-var">final_state</span>[<span class="c-str">"final_report"</span>],
+        <span class="c-var">sources</span>       = <span class="c-var">final_state</span>[<span class="c-str">"citation_index"</span>],
+        <span class="c-var">quality_scores</span>= <span class="c-var">final_state</span>[<span class="c-str">"quality_scores"</span>],
+        <span class="c-var">iteration_count</span>= <span class="c-var">final_state</span>[<span class="c-str">"iteration_count"</span>],
+        <span class="c-var">trace</span>         = <span class="c-var">final_state</span>[<span class="c-str">"trace"</span>]            <span class="c-cmt"># full reasoning trace</span>
+    )
+    </div>
+  </div>
+
+  <h3 id="observability">5.4 Observability — Structured Agent Logging</h3>
+
+  <p>Each agent emits a structured log entry on entry, exit, and tool call. The schema is consistent across all agents and is designed for downstream aggregation in Cloud Logging or local analysis via SQLite. Token usage, latency, and the critic scores are first-class fields — not embedded in free-text messages.</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Log field</th><th>Type</th><th>Emitted by</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>session_id</td><td>string</td><td>All agents</td><td>Correlates all events for a single research job</td></tr>
+        <tr><td>agent_name</td><td>string</td><td>All agents</td><td>e.g. <code>researcher_node</code></td></tr>
+        <tr><td>event_type</td><td>enum</td><td>All agents</td><td>ENTER | EXIT | TOOL_CALL | TOOL_RESULT | ERROR</td></tr>
+        <tr><td>iteration</td><td>int</td><td>All agents</td><td>Critique loop counter at time of emission</td></tr>
+        <tr><td>latency_ms</td><td>int</td><td>All agents</td><td>Wall-clock time for the agent invocation</td></tr>
+        <tr><td>tokens_in / tokens_out</td><td>int</td><td>LLM agents</td><td>Token usage per invocation for cost tracking</td></tr>
+        <tr><td>quality_scores</td><td>dict</td><td>Critic</td><td>Accuracy, coverage, clarity, objectivity scores</td></tr>
+        <tr><td>routing_decision</td><td>string</td><td>Critic</td><td>PASS | FAIL-RETRIEVAL | FAIL-QUALITY | MAX-ITER</td></tr>
+        <tr><td>sources_found</td><td>int</td><td>Researcher</td><td>Count of sources written to source_map this invocation</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- §6 DEPLOYMENT -->
+<section class="section" id="deployment">
+  <h2><span class="sec-n">§6</span> Deployment Topology, IAM &amp; SRE</h2>
+
+  <h3 id="topology-detail">6.1 Deployment Topology</h3>
+
+  <div class="diag">
+    <div class="diag-caption">
+      <span>Figure 4 — Deployment topology · demo (local) vs. production (Cloud Run)</span>
+      <div class="dc-tags"><span class="dc-tag hl">Docker Compose</span><span class="dc-tag hl">Cloud Run</span><span class="dc-tag">Ollama</span></div>
+    </div>
+    <div class="svg-wrap">
+      <svg viewBox="0 0 780 320" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono',monospace">
+        <!-- LOCAL STACK -->
+        <rect x="14" y="14" width="340" height="292" fill="none" stroke="#dddbd6" stroke-width="1" stroke-dasharray="5 3" rx="4"/>
+        <text x="24" y="30" font-size="8" fill="#8a8784" letter-spacing="1">[ LOCAL · DOCKER COMPOSE ]</text>
+
+        <rect x="30" y="44" width="140" height="50" fill="#faf9f7" stroke="#3d6b8e" stroke-width="1" rx="2"/>
+        <text x="100" y="63" font-size="10" font-weight="500" fill="#1a1916" text-anchor="middle">marg-app</text>
+        <text x="100" y="79" font-size="8" fill="#4a4845" text-anchor="middle">FastAPI + LangGraph</text>
+        <text x="100" y="91" font-size="8" fill="#3a7d5a" text-anchor="middle">:8000</text>
+
+        <rect x="186" y="44" width="140" height="50" fill="#faf9f7" stroke="#dddbd6" stroke-width="1" rx="2"/>
+        <text x="256" y="63" font-size="10" font-weight="500" fill="#1a1916" text-anchor="middle">ollama</text>
+        <text x="256" y="79" font-size="8" fill="#4a4845" text-anchor="middle">LLM inference</text>
+        <text x="256" y="91" font-size="8" fill="#3a7d5a" text-anchor="middle">:11434</text>
+
+        <rect x="30" y="114" width="140" height="50" fill="#faf9f7" stroke="#dddbd6" stroke-width="1" rx="2"/>
+        <text x="100" y="133" font-size="10" font-weight="500" fill="#1a1916" text-anchor="middle">streamlit-ui</text>
+        <text x="100" y="149" font-size="8" fill="#4a4845" text-anchor="middle">Progress + report view</text>
+        <text x="100" y="161" font-size="8" fill="#3a7d5a" text-anchor="middle">:8501</text>
+
+        <rect x="30" y="184" width="296" height="50" fill="#f0eeea" stroke="#dddbd6" stroke-width="1" rx="2"/>
+        <text x="178" y="203" font-size="10" font-weight="500" fill="#1a1916" text-anchor="middle">shared volume · ./data</text>
+        <text x="178" y="219" font-size="8" fill="#4a4845" text-anchor="middle">JSON checkpoints · SQLite query log</text>
+
+        <text x="30" y="275" font-size="8" fill="#3a7d5a">▸ docker compose up -d</text>
+        <text x="30" y="289" font-size="8" fill="#3a7d5a">▸ ollama pull llama3.1:8b</text>
+
+        <!-- LOCAL arrows -->
+        <line x1="170" y1="69" x2="184" y2="69" stroke="#3d6b8e" stroke-width="1" marker-end="url(#arr)"/>
+        <line x1="100" y1="94" x2="100" y2="112" stroke="#8a8784" stroke-width="0.8" stroke-dasharray="3 2" marker-end="url(#arr)"/>
+        <line x1="100" y1="164" x2="100" y2="182" stroke="#8a8784" stroke-width="0.8" stroke-dasharray="3 2" marker-end="url(#arr)"/>
+
+        <!-- PROD STACK -->
+        <rect x="420" y="14" width="346" height="292" fill="none" stroke="#dddbd6" stroke-width="1" stroke-dasharray="5 3" rx="4"/>
+        <text x="430" y="30" font-size="8" fill="#8a8784" letter-spacing="1">[ CLOUD RUN · GCP · europe-west1 ]</text>
+
+        <rect x="436" y="44" width="140" height="60" fill="#eef3f7" stroke="#3d6b8e" stroke-width="1" rx="2"/>
+        <text x="506" y="63" font-size="10" font-weight="500" fill="#1a1916" text-anchor="middle">Cloud Run · MARG</text>
+        <text x="506" y="79" font-size="8" fill="#4a4845" text-anchor="middle">single container · min=0</text>
+        <text x="506" y="95" font-size="8" fill="#3d6b8e" text-anchor="middle">8GB RAM · 4 vCPU</text>
+
+        <rect x="596" y="44" width="140" height="60" fill="#faf9f7" stroke="#dddbd6" stroke-width="1" rx="2"/>
+        <text x="666" y="63" font-size="10" font-weight="500" fill="#1a1916" text-anchor="middle">Ollama sidecar</text>
+        <text x="666" y="79" font-size="8" fill="#4a4845" text-anchor="middle">same container</text>
+        <text x="666" y="95" font-size="8" fill="#3a7d5a" text-anchor="middle">7B / 8B model</text>
+
+        <rect x="436" y="124" width="140" height="50" fill="#faf9f7" stroke="#dddbd6" stroke-width="1" rx="2"/>
+        <text x="506" y="143" font-size="10" font-weight="500" fill="#1a1916" text-anchor="middle">Cloud Storage</text>
+        <text x="506" y="159" font-size="8" fill="#4a4845" text-anchor="middle">checkpoints · outputs</text>
+
+        <rect x="596" y="124" width="140" height="50" fill="#faf9f7" stroke="#dddbd6" stroke-width="1" rx="2"/>
+        <text x="666" y="143" font-size="10" font-weight="500" fill="#1a1916" text-anchor="middle">Cloud Logging</text>
+        <text x="666" y="159" font-size="8" fill="#4a4845" text-anchor="middle">structured agent logs</text>
+
+        <rect x="436" y="194" width="300" height="50" fill="#f0eeea" stroke="#dddbd6" stroke-width="1" rx="2"/>
+        <text x="586" y="213" font-size="10" font-weight="500" fill="#1a1916" text-anchor="middle">Cloud Armor · Load Balancer</text>
+        <text x="586" y="229" font-size="8" fill="#4a4845" text-anchor="middle">WAF · rate limiting · HTTPS termination</text>
+
+        <text x="436" y="270" font-size="8" fill="#3d6b8e">▸ gcloud run deploy marg</text>
+        <text x="436" y="284" font-size="8" fill="#3d6b8e">▸ --region europe-west1 --memory 8Gi</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3 id="iam">6.2 IAM &amp; Least-Privilege</h3>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Principal</th><th>Role / permission</th><th>Rationale</th></tr></thead>
+      <tbody>
+        <tr><td>Cloud Run service account</td><td><code>roles/storage.objectCreator</code></td><td>Write checkpoints to GCS; cannot read other buckets or delete objects</td></tr>
+        <tr><td>Cloud Run service account</td><td><code>roles/logging.logWriter</code></td><td>Emit structured agent logs to Cloud Logging; cannot read logs</td></tr>
+        <tr><td>Cloud Run service account</td><td>No Vertex AI roles</td><td>Demo tier uses Ollama sidecar; Vertex AI binding added only at production graduation</td></tr>
+        <tr><td>Cloud Build (CI)</td><td><code>roles/run.developer</code></td><td>Deploy new image revisions; cannot manage IAM or billing</td></tr>
+        <tr><td>External users</td><td>Unauthenticated invocation <span class="badge b-warn">demo only</span></td><td>Cloud Armor rate-limits at 60 req/min/IP; auth layer added at production graduation</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="sre">6.3 SRE — Resilience &amp; Graceful Degradation</h3>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Failure scenario</th><th>Detection</th><th>Behaviour</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Ollama unresponsive</td>
+          <td>HTTP 503 from <code>localhost:11434</code></td>
+          <td>Retry 3× with exponential backoff (1s, 2s, 4s). If all fail, return <code>503</code> with structured error — no partial or hallucinated report delivered</td>
+        </tr>
+        <tr>
+          <td>DuckDuckGo returns no results</td>
+          <td>Empty result list from wrapper</td>
+          <td>Planner sub-query rewrite attempted once. If still empty, section flagged as <code>source_gap=true</code>; Critic will route to re-search on first pass</td>
+        </tr>
+        <tr>
+          <td>Critique loop reaches max iterations</td>
+          <td><code>iteration_count >= 3</code></td>
+          <td>Hard route to Formatter. Final report includes <code>quality_warning: true</code> and scores. Operator not blocked; best available output delivered</td>
+        </tr>
+        <tr>
+          <td>LLM structured output parse failure</td>
+          <td>JSON decode error on agent response</td>
+          <td>Retry with temperature=0 and explicit JSON schema reminder in prompt. Three retries before agent raises <code>ParseError</code> and state is checkpointed for inspection</td>
+        </tr>
+        <tr>
+          <td>Cloud Run cold start</td>
+          <td>Request latency &gt; 15s</td>
+          <td>min-instances=1 at production tier. Demo tier accepts cold starts; Streamlit UI shows loading state. No user-visible error.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- §7 ADRs -->
+<section class="section" id="adr">
+  <h2><span class="sec-n">§7</span> Architecture Decision Records</h2>
+
+  <div class="adr">
+    <div class="adr-header">
+      <span class="adr-id">ADR-001</span>
+      <span class="adr-status">accepted</span>
+    </div>
+    <div class="adr-title">LangGraph over a custom agent loop</div>
+    <div class="adr-body">
+      <div class="adr-section">
+        <span class="adr-section-label">Context</span>
+        <p>The critique loop requires conditional back-edges, state persistence, and inspectable execution traces. A custom Python loop could implement these but would require non-trivial state management code and re-implementation of checkpointing.</p>
+      </div>
+      <div class="adr-section">
+        <span class="adr-section-label">Decision</span>
+        <p>LangGraph <code>StateGraph</code> with <code>TypedDict</code> state and <code>SqliteSaver</code> checkpointer. The <code>add_conditional_edges</code> API makes the routing logic an explicit, testable function rather than an implicit branch buried in agent code. Checkpointing is structural, not bolted-on.</p>
+      </div>
+      <div class="adr-section">
+        <span class="adr-section-label">Consequences</span>
+        <p>LangGraph 0.2 API is stable but evolving; minor breaking changes expected. Mitigation: pin version in <code>requirements.txt</code> and run regression tests on upgrade. The benefit — transparent, testable routing logic — outweighs the dependency risk.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="adr">
+    <div class="adr-header">
+      <span class="adr-id">ADR-002</span>
+      <span class="adr-status">accepted</span>
+    </div>
+    <div class="adr-title">Ollama over OpenAI API for inference</div>
+    <div class="adr-body">
+      <div class="adr-section">
+        <span class="adr-section-label">Context</span>
+        <p>The system requires multi-turn LLM calls across five agents. At research depth=deep, a single job can consume 50K–200K tokens. At OpenAI GPT-4o pricing (~$15/M input tokens as of 2025), a single deep research job costs $0.75–$3.00. This is prohibitive for a demonstration system and creates a dependency on external API availability.</p>
+      </div>
+      <div class="adr-section">
+        <span class="adr-section-label">Decision</span>
+        <p>Ollama with Llama 3.1 8B (default) and 70B (enhanced) as primary inference runtime. Zero API cost. Runs on CPU; 8B model requires ~8GB RAM. The architecture accepts the quality-cost tradeoff: Llama 3.1 8B is 2–4 MMLU points below GPT-4o on reasoning tasks [2], which the Critic loop partially compensates by flagging low-quality outputs for re-synthesis.</p>
+      </div>
+      <div class="adr-section">
+        <span class="adr-section-label">Production graduation</span>
+        <p>The <code>LLMClient</code> abstraction in <code>agents/base.py</code> accepts any OpenAI-compatible endpoint. Switching to Vertex AI Gemini or OpenAI requires changing one environment variable, not refactoring agent code.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="adr">
+    <div class="adr-header">
+      <span class="adr-id">ADR-003</span>
+      <span class="adr-status">accepted</span>
+    </div>
+    <div class="adr-title">Critic as a routing function, not a score threshold</div>
+    <div class="adr-body">
+      <div class="adr-section">
+        <span class="adr-section-label">Context</span>
+        <p>The simplest Critic implementation returns a binary pass/fail score and routes to re-synthesis on failure. But this loses information: a report that fails on retrieval gaps needs different remediation from one that fails on analytical clarity.</p>
+      </div>
+      <div class="adr-section">
+        <span class="adr-section-label">Decision</span>
+        <p>The Critic returns a structured <code>critic_feedback</code> object with a <code>type</code> field (<code>RETRIEVAL_GAP</code> | <code>QUALITY_FAIL</code>), the affected section titles, and a targeted rewrite instruction. The LangGraph conditional edge function reads <code>type</code> to route to Researcher (for retrieval gaps) or Synthesizer (for quality issues). This means the correct agent is invoked for each failure mode — not always the Synthesizer.</p>
+      </div>
+      <div class="adr-section">
+        <span class="adr-section-label">Rejected alternative</span>
+        <p>Binary pass/fail always routing to Synthesizer. Rejected because re-synthesising from the same thin source material produces the same thin output — iteration achieves nothing. The Researcher must be invoked when the root cause is retrieval depth, not synthesis quality.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="tradeoff-grid">
+    <div class="tq">
+      <span class="tq-label">Tradeoff</span>
+      <div class="tq-title">Single container vs. microservices</div>
+      <div class="tq-body">Single container simplifies deployment (docker compose up), eliminates network overhead between agents, and runs within Cloud Run free tier. Microservices would allow independent agent scaling but add network latency (~5ms/hop × 5 agents × 3 critique iterations = ~75ms) and deployment complexity that is not justified at demo scale.</div>
+      <span class="tq-verdict chose">chose · single container</span>
+    </div>
+    <div class="tq">
+      <span class="tq-label">Tradeoff</span>
+      <div class="tq-title">DuckDuckGo vs. SerpAPI/Bing</div>
+      <div class="tq-body">DuckDuckGo wrapper requires no API key, logs no queries, and has no monthly cost. SerpAPI provides higher result quality and structured metadata but costs $50+/month and requires query transmission to a third-party service. For a local-first, privacy-preserving demo, the quality reduction is acceptable; the architecture abstracts the tool interface so substitution is a one-line config change.</div>
+      <span class="tq-verdict chose">chose · DuckDuckGo</span>
+    </div>
+    <div class="tq">
+      <span class="tq-label">Tradeoff</span>
+      <div class="tq-title">Synchronous API vs. async SSE</div>
+      <div class="tq-body">A deep research job takes 2–5 minutes. A synchronous HTTP response would require the client to hold a connection open for the full duration, making it incompatible with most reverse proxies (60s timeout). The chosen design returns a <code>session_id</code> immediately and exposes a <code>GET /v1/status/:id</code> SSE endpoint for real-time progress streaming.</div>
+      <span class="tq-verdict chose">chose · SSE streaming</span>
+    </div>
+    <div class="tq">
+      <span class="tq-label">Tradeoff</span>
+      <div class="tq-title">Prompt-based routing vs. code-based conditional edges</div>
+      <div class="tq-body">Asking the Critic LLM to decide which agent to invoke next (prompt-based routing) introduces non-determinism into the control flow. A misrouted invocation could skip re-research or loop infinitely. Code-based conditional edges in LangGraph make routing a pure Python function with deterministic behaviour, testable in isolation, and independent of LLM output quality.</div>
+      <span class="tq-verdict chose">chose · code-based edges</span>
+    </div>
+  </div>
+</section>
+
+<!-- §8 SIMULATOR -->
+<section class="section" id="simulator">
+  <h2><span class="sec-n">§8</span> Live Agent Execution Simulator</h2>
+
+  <p>The simulator traces a complete MARG workflow for a representative research query. Select a scenario, then click Run to animate the agent state machine. Each step shows the active agent, its inputs consumed from state, its outputs written to state, and an approximated latency.</p>
+
+  <div class="sim">
+    <div class="sim-hdr">
+      <span class="sim-hdr-title">MARG · agent execution trace · v0.1</span>
+      <div class="sim-status"><span class="sdot" id="sdot"></span><span id="slbl">idle</span></div>
+    </div>
+    <div class="sim-body">
+      <div class="sim-l">
+        <span class="sim-lbl">Research scenario</span>
+        <div class="sc-list">
+          <button class="sc-btn active" data-idx="0">Competitive analysis<br><span style="font-size:0.58rem;color:var(--ink3)">multi-section · critique loop</span></button>
+          <button class="sc-btn" data-idx="1">Technical deep dive<br><span style="font-size:0.58rem;color:var(--ink3)">high depth · re-search triggered</span></button>
+          <button class="sc-btn" data-idx="2">Market sizing<br><span style="font-size:0.58rem;color:var(--ink3)">numeric · objectivity fail</span></button>
+        </div>
+        <div class="sc-desc" id="scDesc"></div>
+        <button class="run-btn" id="runBtn">▶ Run simulation</button>
+      </div>
+      <div class="sim-r">
+        <span class="sim-lbl">Agent pipeline · step execution</span>
+        <div class="pip-steps">
+          <div class="srow" id="sr0"><div class="sic" id="si0">·</div><div class="sname">Planner Agent<span>scope · outline · sub-queries</span></div><div class="stime" id="st0">—</div><div class="sstatus w" id="ss0">idle</div></div>
+          <div class="srow" id="sr1"><div class="sic" id="si1">·</div><div class="sname">Researcher Agent<span>web search · source map</span></div><div class="stime" id="st1">—</div><div class="sstatus w" id="ss1">idle</div></div>
+          <div class="srow" id="sr2"><div class="sic" id="si2">·</div><div class="sname">Synthesizer Agent<span>draft sections · citations</span></div><div class="stime" id="st2">—</div><div class="sstatus w" id="ss2">idle</div></div>
+          <div class="srow" id="sr3"><div class="sic" id="si3">·</div><div class="sname">Critic Agent — pass/fail gate<span>score · routing decision</span></div><div class="stime" id="st3">—</div><div class="sstatus w" id="ss3">idle</div></div>
+          <div class="srow" id="sr4"><div class="sic" id="si4">·</div><div class="sname">Re-search (if triggered)<span>targeted sub-queries · gap fill</span></div><div class="stime" id="st4">—</div><div class="sstatus w" id="ss4">idle</div></div>
+          <div class="srow" id="sr5"><div class="sic" id="si5">·</div><div class="sname">Re-synthesis (if triggered)<span>rewrite with critic feedback</span></div><div class="stime" id="st5">—</div><div class="sstatus w" id="ss5">idle</div></div>
+          <div class="srow" id="sr6"><div class="sic" id="si6">·</div><div class="sname">Critic Agent — 2nd pass<span>re-evaluate after iteration</span></div><div class="stime" id="st6">—</div><div class="sstatus w" id="ss6">idle</div></div>
+          <div class="srow" id="sr7"><div class="sic" id="si7">·</div><div class="sname">Formatter Agent<span>structure · TOC · references</span></div><div class="stime" id="st7">—</div><div class="sstatus w" id="ss7">idle</div></div>
+          <div class="srow" id="sr8"><div class="sic" id="si8">·</div><div class="sname">Delivery<span>Markdown + scores + trace</span></div><div class="stime" id="st8">—</div><div class="sstatus w" id="ss8">idle</div></div>
+        </div>
+        <div class="result-box" id="rBox"><span style="color:var(--ink3)">// output appears here after run · includes quality_scores and routing_trace</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §9 REFERENCES -->
+<section class="section" id="references">
+  <h2><span class="sec-n">§9</span> References</h2>
+  <div class="ref-list">
+    <div class="ref-item"><div class="ref-num">[1]</div><div class="ref-body">Muennighoff, N. et al. (2023). MTEB: Massive Text Embedding Benchmark. <em>Proceedings of EACL 2023.</em> arXiv:2210.07316</div></div>
+    <div class="ref-item"><div class="ref-num">[2]</div><div class="ref-body">Meta AI. (2024). Llama 3.1 Technical Report. <em>Llama 3.1 Model Card.</em> meta.com/llama</div></div>
+    <div class="ref-item"><div class="ref-num">[3]</div><div class="ref-body">Cormack, G.V., Clarke, C.L.A., Buettcher, S. (2009). Reciprocal Rank Fusion outperforms Condorcet and individual Rank Learning Methods. <em>SIGIR 2009.</em></div></div>
+    <div class="ref-item"><div class="ref-num">[4]</div><div class="ref-body">Wang, L. et al. (2020). ms-marco-MiniLM-L-6-v2 cross-encoder for MS MARCO passage re-ranking. <em>Hugging Face Model Hub.</em></div></div>
+    <div class="ref-item"><div class="ref-num">[5]</div><div class="ref-body">LangChain Inc. (2024). LangGraph: Building stateful, multi-actor applications with LLMs. <em>LangGraph Documentation.</em> langchain-ai.github.io/langgraph</div></div>
+    <div class="ref-item"><div class="ref-num">[6]</div><div class="ref-body">OpenAI. (2022). Chain-of-Thought Prompting Elicits Reasoning in Large Language Models. <em>NeurIPS 2022.</em> arXiv:2201.11903</div></div>
+    <div class="ref-item"><div class="ref-num">[7]</div><div class="ref-body">Shinn, N. et al. (2023). Reflexion: Language Agents with Verbal Reinforcement Learning. <em>NeurIPS 2023.</em> arXiv:2303.11366</div></div>
+    <div class="ref-item"><div class="ref-num">[8]</div><div class="ref-body">Luan, Y. et al. (2021). Sparse, Dense, and Attentional Representations for Text Retrieval. <em>TACL 2021.</em> arXiv:2005.00181</div></div>
+    <div class="ref-item"><div class="ref-num">[9]</div><div class="ref-body">Gao, L. et al. (2022). Precise Zero-Shot Dense Retrieval without Relevance Labels (HyDE). <em>arXiv:2212.10496</em></div></div>
+    <div class="ref-item"><div class="ref-num">[10]</div><div class="ref-body">Touvron, H. et al. (2023). Llama 2: Open Foundation and Fine-Tuned Chat Models. <em>arXiv:2307.09288</em></div></div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<footer>
+  <span>MARG-ADD-001 · v0.1 · Architecture Design Document · Siddharth Rao</span>
+  <span>LangGraph · Ollama · DuckDuckGo · Docker / Cloud Run · 2025</span>
+</footer>
+
+<script>
+const SC = [
+  {
+    label:"Competitive analysis",
+    desc:"<strong>Multi-section competitive analysis.</strong> Planner generates 5-section outline. Researcher executes 15 sub-queries. Synthesizer drafts all sections. Critic identifies a coverage gap in §3 (market share data insufficient). Researcher re-invoked for §3 only. Critic passes on second evaluation. Full report delivered with quality scores.",
+    steps:[
+      {t:"11s", s:"p", n:'// Planner: 5-section outline generated\n// sections: ["Market Overview","Competitor Profiles","Market Share","Positioning","Outlook"]\n// sub_queries: 15 total (3 per section)'},
+      {t:"48s", s:"p", n:'// Researcher: 15 DuckDuckGo calls completed\n// source_map: 42 entries · avg relevance: 0.74\n// 3 entries flagged low relevance (< 0.50) in §3 Market Share'},
+      {t:"62s", s:"p", n:'// Synthesizer: 5 sections drafted · 38 inline citations\n// citation_index: {1..38} → source_map entries\n// draft_sections written to state'},
+      {t:"14s", s:"p", n:'// Critic: scores computed\n// accuracy: 0.83 · coverage: 0.64 ← FAIL (< 0.75)\n// clarity: 0.81 · objectivity: 0.79\n// routing: FAIL-RETRIEVAL · section: "Market Share"\n// iteration_count: 1'},
+      {t:"18s", s:"p", n:'// Re-search: targeted sub-queries for §3\n// 3 new queries: ["market share LLM providers 2024","LLM vendor revenue comparison","Anthropic OpenAI market position"]\n// 8 new source entries appended to source_map'},
+      {t:"k",  s:"k", n:'// skipped (re-synthesis not required for FAIL-RETRIEVAL)'},
+      {t:"12s", s:"p", n:'// Critic (2nd pass): all dimensions pass\n// accuracy: 0.85 · coverage: 0.82 · clarity: 0.81 · objectivity: 0.79\n// routing: PASS → formatter · iteration_count: 1'},
+      {t:"9s",  s:"p", n:'// Formatter: report assembled\n// executive_summary: 3 paragraphs\n// table_of_contents: 5 sections\n// reference_list: 46 entries\n// disclosure_header: applied'},
+      {t:"<1s", s:"p", n:'// Delivery: report_md (4,200 words) + citation_index + quality_scores + trace\n// session checkpointed · latency_total: ~175s'}
+    ],
+    out:`<span class="rtag g">PASS · 1 critique iteration</span><span class="rtag a">~175s total</span>
+
+// final quality_scores
+{ "accuracy": 0.85, "coverage": 0.82, "clarity": 0.81, "objectivity": 0.79 }
+
+// routing_trace
+planner → researcher → synthesizer → critic[FAIL-RETRIEVAL §3]
+→ researcher[targeted] → critic[PASS] → formatter → END
+
+// report metadata
+{ "word_count": 4200, "sources": 46, "sections": 5,
+  "iteration_count": 1, "critique_routing": "FAIL-RETRIEVAL→researcher" }`
+  },
+  {
+    label:"Technical deep dive",
+    desc:"<strong>Technical deep dive — depth=deep.</strong> Planner generates 7-section outline with 3–5 sub-queries per section. Researcher executes 28 searches. Synthesizer drafts all sections. Critic flags accuracy failure in §2 (unsupported technical claim). Re-search and re-synthesis triggered. Second pass: all dimensions pass. Longest job in benchmark: ~4 minutes.",
+    steps:[
+      {t:"14s", s:"p", n:'// Planner: depth=deep · 7-section outline\n// sub_queries: 28 total (4 per section)\n// outline weights: §2 Architecture (0.25) · §4 Performance (0.20) highest'},
+      {t:"82s", s:"p", n:'// Researcher: 28 DuckDuckGo calls\n// source_map: 98 entries · avg relevance: 0.71\n// §2 Architecture: 12 entries · §4 Performance: 14 entries'},
+      {t:"94s", s:"p", n:'// Synthesizer: 7 sections drafted · 72 citations\n// NOTE: §2 contains claim "achieves 98% accuracy" with no source citation\n// citation_index gap detected'},
+      {t:"18s", s:"p", n:'// Critic: scores\n// accuracy: 0.67 ← FAIL (< 0.80) · §2 unsourced claim\n// coverage: 0.84 · clarity: 0.76 · objectivity: 0.82\n// routing: FAIL-RETRIEVAL · target_section: "Architecture"\n// critic_feedback.type: RETRIEVAL_GAP'},
+      {t:"22s", s:"p", n:'// Re-search §2: 4 targeted queries\n// ["transformer architecture accuracy benchmarks 2024","LLM accuracy evaluation MMLU","...]\n// 11 new entries · 2 entries directly support the claimed figure'},
+      {t:"28s", s:"p", n:'// Re-synthesis §2 only:\n// critic_feedback injected: "cite accuracy claim to source or remove"\n// §2 rewritten with explicit citation to newly retrieved benchmark source'},
+      {t:"15s", s:"p", n:'// Critic (2nd pass):\n// accuracy: 0.88 · coverage: 0.85 · clarity: 0.77 · objectivity: 0.82\n// ALL PASS → formatter · iteration_count: 2'},
+      {t:"11s", s:"p", n:'// Formatter: 7-section report · 6,400 words\n// 83 citations · executive summary · TOC\n// disclosure_header applied'},
+      {t:"<1s", s:"p", n:'// Delivery · latency_total: ~285s · quality: all pass'}
+    ],
+    out:`<span class="rtag g">PASS · 2 critique iterations</span><span class="rtag a">~285s total</span>
+
+// final quality_scores
+{ "accuracy": 0.88, "coverage": 0.85, "clarity": 0.77, "objectivity": 0.82 }
+
+// routing_trace
+planner → researcher → synthesizer
+→ critic[FAIL-RETRIEVAL §2 · accuracy 0.67]
+→ researcher[targeted §2] → synthesizer[§2 rewrite]
+→ critic[PASS] → formatter → END
+
+// report metadata
+{ "word_count": 6400, "sources": 83, "sections": 7, "iteration_count": 2 }`
+  },
+  {
+    label:"Market sizing",
+    desc:"<strong>Market sizing report — numeric + objectivity sensitivity.</strong> Standard depth. Researcher gathers market size figures. Synthesizer draft includes promotional language in §4 (Opportunity section). Critic flags QUALITY_FAIL on objectivity dimension. Synthesizer re-invoked for §4 with targeted rewrite instruction. Second pass: all dimensions pass.",
+    steps:[
+      {t:"9s",  s:"p", n:'// Planner: 4-section outline\n// sections: ["Market Definition","Size & Growth","Segments","Opportunity"]\n// sub_queries: 12 total · §4 Opportunity: 4 queries'},
+      {t:"36s", s:"p", n:'// Researcher: 12 DuckDuckGo calls\n// source_map: 35 entries · market sizing sources: Gartner, IDC, Statista\n// §4 sources include 2 vendor press releases (high marketing tone)'},
+      {t:"41s", s:"p", n:'// Synthesizer: 4 sections drafted\n// §4 Opportunity: drafted from vendor sources\n// ISSUE: "transformative," "unprecedented growth," "market-defining" — promotional register'},
+      {t:"11s", s:"p", n:'// Critic: scores\n// accuracy: 0.86 · coverage: 0.81 · clarity: 0.84\n// objectivity: 0.61 ← FAIL (< 0.75) · §4 promotional language\n// routing: FAIL-QUALITY · type: QUALITY_FAIL\n// critic_feedback: "§4 uses promotional register; rewrite in neutral analytical voice"'},
+      {t:"k",   s:"k", n:'// re-search not triggered (FAIL-QUALITY routes to synthesizer, not researcher)'},
+      {t:"19s", s:"p", n:'// Re-synthesis §4 only · critic_feedback injected:\n// "Remove: transformative, unprecedented, market-defining\n//  Rewrite in third-person analytical register\n//  Cite figures directly from Gartner/IDC sources only"'},
+      {t:"9s",  s:"p", n:'// Critic (2nd pass):\n// accuracy: 0.87 · coverage: 0.81 · clarity: 0.84 · objectivity: 0.82\n// ALL PASS → formatter · iteration_count: 1'},
+      {t:"7s",  s:"p", n:'// Formatter: 4-section report · 2,800 words · 35 citations'},
+      {t:"<1s", s:"p", n:'// Delivery · latency_total: ~133s'}
+    ],
+    out:`<span class="rtag g">PASS · 1 critique iteration</span><span class="rtag a">~133s total</span>
+
+// final quality_scores
+{ "accuracy": 0.87, "coverage": 0.81, "clarity": 0.84, "objectivity": 0.82 }
+
+// routing_trace
+planner → researcher → synthesizer
+→ critic[FAIL-QUALITY §4 · objectivity 0.61]
+→ synthesizer[§4 rewrite · neutral register]
+→ critic[PASS] → formatter → END
+
+// critic_feedback (injected to Synthesizer)
+{
+  "type": "QUALITY_FAIL",
+  "section": "Opportunity",
+  "instruction": "Rewrite in third-person analytical register. Remove promotional language. Cite figures from Gartner/IDC only."
+}`
+  }
+];
+
+let cur=0, running=false;
+const scBtns=document.querySelectorAll('.sc-btn');
+const runBtn=document.getElementById('runBtn');
+const scDesc=document.getElementById('scDesc');
+const sdot=document.getElementById('sdot');
+const slbl=document.getElementById('slbl');
+const rBox=document.getElementById('rBox');
+
+scBtns.forEach(b=>{
+  b.addEventListener('click',()=>{
+    if(running)return;
+    scBtns.forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    cur=parseInt(b.dataset.idx);
+    scDesc.innerHTML=SC[cur].desc;
+    reset();
+  });
+});
+
+function reset(){
+  for(let i=0;i<9;i++){
+    const ic=document.getElementById('si'+i);
+    ic.className='sic'; ic.textContent='·';
+    document.getElementById('st'+i).textContent='—';
+    const ss=document.getElementById('ss'+i);
+    ss.className='sstatus w'; ss.textContent='idle';
+    document.getElementById('sr'+i).className='srow';
+  }
+  rBox.className='result-box';
+  rBox.innerHTML='<span style="color:var(--ink3)">// output appears here after run · includes quality_scores and routing_trace</span>';
+}
+
+async function run(){
+  if(running)return;
+  running=true; runBtn.disabled=true;
+  sdot.classList.add('on'); slbl.textContent='running';
+  reset();
+
+  const sc=SC[cur];
+  const delays=[300,600,700,500,500,500,500,400,200];
+
+  for(let i=0;i<9;i++){
+    const ic=document.getElementById('si'+i);
+    const te=document.getElementById('st'+i);
+    const se=document.getElementById('ss'+i);
+    const row=document.getElementById('sr'+i);
+    const step=sc.steps[i];
+
+    if(step.s==='k'){
+      ic.className='sic skip-ic'; ic.textContent='—';
+      se.className='sstatus sk'; se.textContent='skipped';
+      te.textContent='—';
+      row.className='srow';
+      await new Promise(r=>setTimeout(r,80));
+      continue;
+    }
+
+    ic.className='sic run'; ic.textContent='→';
+    se.className='sstatus r'; se.textContent='running';
+    row.className='srow active-s';
+    row.scrollIntoView({behavior:'smooth',block:'nearest'});
+    await new Promise(r=>setTimeout(r,delays[i]));
+    ic.className='sic done'; ic.textContent='✓';
+    se.className='sstatus p'; se.textContent='done';
+    te.textContent=step.t;
+    row.className='srow done-s';
+  }
+
+  rBox.className='result-box has-result';
+  rBox.innerHTML='<pre style="white-space:pre-wrap;font-family:var(--mono);font-size:0.65rem;line-height:1.7">'+sc.out+'</pre>';
+  sdot.classList.remove('on'); slbl.textContent='complete';
+  running=false; runBtn.disabled=false;
+}
+
+runBtn.addEventListener('click', run);
+scDesc.innerHTML = SC[0].desc;
+
+// sidebar scroll highlighting
+const sections = document.querySelectorAll('.section[id]');
+const sbLinks = document.querySelectorAll('.sb-links a');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting){
+      sbLinks.forEach(a => a.classList.remove('active'));
+      const link = document.querySelector(`.sb-links a[href="#${e.target.id}"]`);
+      if(link) link.classList.add('active');
+    }
+  });
+}, {rootMargin:'-20% 0px -60% 0px'});
+sections.forEach(s => observer.observe(s));
+</script>
 </body>
 </html>
